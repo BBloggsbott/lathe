@@ -1,3 +1,14 @@
 [workspace]
 members = ["crates/lathe-core"]
 resolver = "3"
+
+[workspace.dependencies]
+rig-core = "0.39.0"
+petgraph = {version = "0.8.3", features = ["serde-1"]}
+tokio = {version = "1.52.3", features = ["full"]}
+serde = {version = "1.0.228", features = ["derive"]}
+serde_json = "1"
+serde_yaml = "0.9"
+anyhow = "1"
+uuid = {version = "1.23", features = ["v4", "serde"]}
+async-trait = "0.1"
