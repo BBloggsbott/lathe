@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/lathe-core"]
+resolver = "3"
