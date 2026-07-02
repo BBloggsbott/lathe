@@ -12,3 +12,5 @@ serde_yaml  = { workspace = true }
 anyhow      = { workspace = true }
 uuid        = { workspace = true }
 async-trait = { workspace = true }
+rig-core = {workspace = true}
+futures = {workspace = true}

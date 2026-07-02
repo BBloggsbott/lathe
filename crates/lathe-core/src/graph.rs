@@ -1,6 +1,7 @@
-use crate::nodes::NodeKind;
+use crate::node_defs::NodeKind;
 use crate::port::Connection;
 use anyhow::Result;
+use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -54,5 +55,16 @@ impl LatheGraph {
             node_index: node_index_map,
             digraph,
         })
+    }
+
+    pub fn topological_order(&self) -> Result<Vec<String>> {
+        let sorted = toposort(&self.digraph, None).map_err(|cycle| {
+            anyhow::anyhow!("graph contains a cycle: {}", &self.digraph[cycle.node_id()])
+        })?;
+
+        Ok(sorted
+            .into_iter()
+            .map(|idx| self.digraph[idx].clone())
+            .collect())
     }
 }
