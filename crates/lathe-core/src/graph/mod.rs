@@ -7,7 +7,7 @@ use port::Connection;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-mod port;
+pub mod port;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GraphDefinition {
@@ -18,6 +18,7 @@ pub struct GraphDefinition {
 }
 
 pub struct LatheGraph {
+    pub name: String,
     pub definition: GraphDefinition,
     pub node_index: HashMap<String, NodeIndex>,
     pub digraph: DiGraph<String, ()>,
@@ -55,6 +56,7 @@ impl LatheGraph {
         }
 
         Ok(Self {
+            name: definition.name.clone(),
             definition,
             node_index: node_index_map,
             digraph,

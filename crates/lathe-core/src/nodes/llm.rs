@@ -130,6 +130,7 @@ fn build_llm_caller(
     }
 }
 
+// todo: Move default handling to Provider config
 fn build_openai_closure(
     base_url: Option<&String>,
     openai_api_key: Option<&String>,
@@ -164,6 +165,7 @@ fn build_openai_closure(
     }))
 }
 
+// todo: Move default handling to Provider config
 fn build_lmstudio_closure(
     base_url: Option<&String>,
     model: &String,

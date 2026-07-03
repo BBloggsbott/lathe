@@ -20,6 +20,10 @@ impl LatheNode for StartNode {
     }
 
     async fn execute(&self, agent_state: AgentState) -> anyhow::Result<AgentState> {
+        tracing::info!(
+            "Starting Graph execution with agent state: {:?}",
+            agent_state
+        );
         if agent_state.is_empty() {
             bail!("Empty Agent State. Nothing to process")
         }

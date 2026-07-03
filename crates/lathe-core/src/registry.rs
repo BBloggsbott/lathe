@@ -11,7 +11,7 @@ pub type ExecutableNodes = HashMap<String, Box<dyn LatheNode>>;
 
 pub fn inflate(
     nodes: &[NodeKind],
-    provider_configs: LLMProviderConfigs,
+    provider_configs: &LLMProviderConfigs,
 ) -> Result<ExecutableNodes> {
     let mut executable_nodes: ExecutableNodes = HashMap::new();
 
@@ -32,7 +32,7 @@ pub fn inflate(
             NodeKind::LLMNode(def) => {
                 executable_nodes.insert(
                     def.id.clone(),
-                    Box::new(LLMNode::from_node_def(def, &provider_configs)),
+                    Box::new(LLMNode::from_node_def(def, provider_configs)),
                 );
             }
         }

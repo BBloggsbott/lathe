@@ -60,7 +60,7 @@ fn set_value_by_pointer(root: &mut Value, pointer: &str, value: Value) -> Result
     let mut current = root;
 
     for (i, segment) in segments.iter().enumerate() {
-        let is_last = i == segment.len() - 1;
+        let is_last = i == segments.len() - 1;
 
         // JSON Pointer Decoding
         let key = segment.replace("~1", "/").replace("~0", "~");

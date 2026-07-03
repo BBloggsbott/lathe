@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/lathe-core"]
+members = ["crates/lathe-cli","crates/lathe-core"]
 resolver = "3"
 
 [workspace.dependencies]
@@ -13,3 +13,4 @@ anyhow = "1"
 uuid = {version = "1.23", features = ["v4", "serde"]}
 async-trait = "0.1"
 futures = "0.3.32"
+tracing = "0.1"

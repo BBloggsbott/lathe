@@ -13,6 +13,7 @@ pub struct LLMProviderConfig {
     pub id: String,
     pub base_url: Option<String>,
     pub api_key: Option<String>,
+    pub provider: LLMProvider,
 }
 
 impl LLMProviderConfig {
@@ -22,11 +23,13 @@ impl LLMProviderConfig {
                 id: Uuid::new_v4().to_string(),
                 base_url: None,
                 api_key: None,
+                provider: provider.clone(),
             },
             LLMProvider::LMStudio => Self {
                 id: Uuid::new_v4().to_string(),
                 base_url: None,
                 api_key: None,
+                provider: provider.clone(),
             },
         }
     }

@@ -21,6 +21,11 @@ impl LatheNode for EndNode {
     }
 
     async fn execute(&self, agent_state: AgentState) -> anyhow::Result<AgentState> {
+        tracing::info!(
+            "Ending Graph execution with agent state: {:?} and out_pointers: {:?}",
+            agent_state,
+            self.out_pointers
+        );
         if agent_state.is_empty() {
             bail!("Empty Agent State. Nothing to process")
         }
