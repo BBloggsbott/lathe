@@ -1,5 +1,6 @@
-use crate::node_defs::llm::{LLMProvider, LlmNodeDef};
+use crate::node_defs::llm::LlmNodeDef;
 use crate::nodes::LatheNode;
+use crate::provider::{LLMProvider, LLMProviderConfig, LLMProviderConfigs};
 use crate::state::AgentState;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -31,9 +32,9 @@ impl LLMNode {
         id: &str,
         label: &str,
         provider: &LLMProvider,
-        base_url: Option<&String>,
         model: &String,
         system_prompt: &str,
+        provider_config: Option<&LLMProviderConfig>,
     ) -> Self {
         Self {
             id: if !id.is_empty() {
@@ -53,19 +54,19 @@ impl LLMNode {
             } else {
                 LLM_NODE_DEFAULT_SYSTEM_PROMPT.to_string()
             },
-            caller: build_llm_caller(provider, base_url, model, system_prompt)
+            caller: build_llm_caller(provider, model, system_prompt, provider_config)
                 .expect("Unable to build llm caller"),
         }
     }
 
-    pub fn from_node_def(def: &LlmNodeDef) -> Self {
+    pub fn from_node_def(def: &LlmNodeDef, provider_configs: &LLMProviderConfigs) -> Self {
         Self::new(
             &def.id,
             &def.label,
             &def.provider,
-            def.base_url.as_ref(),
             &def.model,
             &def.system_prompt,
+            provider_configs.get(&def.provider_config_id),
         )
     }
 }
@@ -108,13 +109,24 @@ impl LatheNode for LLMNode {
 
 fn build_llm_caller(
     provider: &LLMProvider,
-    base_url: Option<&String>,
     model: &String,
     system_prompt: &str,
+    provider_config: Option<&LLMProviderConfig>,
 ) -> Result<LLMCaller> {
+    let provider_config = match provider_config {
+        None => &LLMProviderConfig::default(provider),
+        Some(config) => config,
+    };
     match provider {
-        LLMProvider::OpenAI => build_openai_closure(base_url, None, model, system_prompt),
-        LLMProvider::LMStudio => build_lmstudio_closure(base_url, model, system_prompt),
+        LLMProvider::OpenAI => build_openai_closure(
+            provider_config.base_url.as_ref(),
+            provider_config.api_key.as_ref(),
+            model,
+            system_prompt,
+        ),
+        LLMProvider::LMStudio => {
+            build_lmstudio_closure(provider_config.base_url.as_ref(), model, system_prompt)
+        }
     }
 }
 

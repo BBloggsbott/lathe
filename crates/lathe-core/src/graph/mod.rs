@@ -1,16 +1,20 @@
 use crate::node_defs::NodeKind;
-use crate::port::Connection;
+use crate::provider::LLMProviderConfigs;
 use anyhow::Result;
 use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
+use port::Connection;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+mod port;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GraphDefinition {
     pub name: String,
     pub nodes: Vec<NodeKind>,
     pub connections: Vec<Connection>,
+    pub provider_configs: LLMProviderConfigs,
 }
 
 pub struct LatheGraph {

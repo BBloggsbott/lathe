@@ -26,6 +26,7 @@ impl Default for StartNodeDef {
 pub struct EndNodeDef {
     pub id: String,
     pub label: String,
+    pub out_pointers: Vec<String>,
 }
 
 impl Default for EndNodeDef {
@@ -33,6 +34,7 @@ impl Default for EndNodeDef {
         Self {
             id: Uuid::new_v4().to_string(),
             label: END_NODE_LABEL.to_string(),
+            out_pointers: vec![],
         }
     }
 }

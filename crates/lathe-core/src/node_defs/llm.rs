@@ -1,10 +1,5 @@
+use crate::provider::LLMProvider;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum LLMProvider {
-    OpenAI,
-    LMStudio,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LlmNodeDef {
@@ -14,4 +9,5 @@ pub struct LlmNodeDef {
     pub model: String,
     pub system_prompt: String,
     pub base_url: Option<String>,
+    pub provider_config_id: String,
 }
