@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, Subcommand, ValueEnum};
 use lathe_core::executor::Executor;
 use lathe_core::graph::port::{Connection, Port};
 use lathe_core::graph::{GraphDefinition, LatheGraph};
@@ -11,75 +11,112 @@ use lathe_core::{registry, yaml};
 use serde_json::{Map, Value};
 use std::path::PathBuf;
 use std::str::FromStr;
-use tracing_subscriber::EnvFilter;
-use uuid::Uuid;
 
 #[derive(Parser, Debug)]
 #[command(name = "lathe", about = "Execute a Lathe pipeline from a YAML file")]
 struct Args {
-    /// Path to the pipeline YAML file
-    #[arg(short, long)]
-    pipeline: Option<PathBuf>,
+    #[command(subcommand)]
+    command: Commands,
+}
 
-    /// The user message to send into the pipeline
-    #[arg(short, long)]
-    message: Option<String>,
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Create an example Graph's yaml
+    Example {
+        /// Name of the pre-defined example
+        name: ExampleType,
+    },
 
-    /// Create an example graph yaml
-    #[arg(short, long)]
-    create_example: bool,
+    /// Run a pipeline from the yaml
+    Run {
+        /// Path to the pipeline YAML file
+        #[arg(short, long)]
+        pipeline: PathBuf,
+
+        /// The user message to send into the pipeline
+        #[arg(short, long)]
+        message: String,
+    },
+}
+
+#[derive(Debug, Clone, ValueEnum)]
+enum ExampleType {
+    Simple,
+    None,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Load .env (OPENAI_API_KEY etc.)
     dotenvy::dotenv().ok();
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
-        .init();
 
     let args = Args::parse();
 
-    if args.create_example {
-        tracing::info!("Creating example yaml");
-        return create_example_yaml();
+    match &args.command {
+        Commands::Example { name } => {
+            tracing_subscriber::fmt()
+                .without_time()
+                .with_target(false)
+                .with_level(true)
+                .compact()
+                .init();
+            match name {
+                ExampleType::Simple => {
+                    tracing::info!("Creating example yaml");
+                    return create_example_yaml();
+                }
+
+                ExampleType::None => {
+                    tracing::info!("Not creating example yaml");
+                }
+            }
+        }
+        Commands::Run { pipeline, message } => {
+            tracing_subscriber::fmt()
+                .without_time()
+                .with_target(false)
+                .with_level(true)
+                .compact()
+                .init();
+            let graph = yaml::load(pipeline)?;
+            tracing::info!("Loaded pipeline: {}", graph.name);
+
+            let nodes =
+                registry::inflate(&graph.definition.nodes, &graph.definition.provider_configs)?;
+
+            let executor = Executor::new(graph, nodes);
+
+            let mut message_as_state = Map::new();
+            message_as_state.insert("message".to_string(), Value::String(message.clone()));
+
+            let initial = AgentState::new(message_as_state);
+            let result = executor.run(initial).await?;
+
+            println!("\nPipeline Output:");
+            println!("{:?}", result);
+        }
     }
-
-    let pipeline = args.pipeline.unwrap();
-    let message = args.message.unwrap();
-
-    let graph = yaml::load(&pipeline)?;
-    tracing::info!("Loaded pipeline: {}", graph.name);
-
-    let nodes = registry::inflate(&graph.definition.nodes, &graph.definition.provider_configs)?;
-
-    let executor = Executor::new(graph, nodes);
-
-    let mut message_as_state = Map::new();
-    message_as_state.insert("message".to_string(), Value::String(message));
-
-    let initial = AgentState::new(message_as_state);
-    let result = executor.run(initial).await?;
-
-    println!("\n=== Pipeline Output ===");
-    println!("{:?}", result);
 
     Ok(())
 }
 
 fn create_example_yaml() -> Result<()> {
-    let start_node_def = StartNodeDef::default();
-    let mut end_node_def = EndNodeDef::default();
-    end_node_def.out_pointers = vec!["/output_message".to_string()];
+    let start_node_def = StartNodeDef {
+        id: "7560d39b-049b-4d60-9f98-ffa580b3304e".to_string(),
+        ..Default::default()
+    };
+    let end_node_def = EndNodeDef {
+        id: "3b9e624c-d161-4914-9b19-4207dbbdbae6".to_string(),
+        out_pointers: vec!["/output_message".to_string()],
+        ..Default::default()
+    };
 
     let provider_config = LLMProviderConfig::default(&LLMProvider::LMStudio);
     // todo: Using my local model fro dev-testing. Update to a generic example.
     let model = "qwen2.5-0.5b-instruct-quantized".to_string();
 
     let llm_node_def = LlmNodeDef {
-        id: Uuid::new_v4().to_string(),
+        id: "98723c82-349c-4baf-b750-2f23927786c8".to_string(),
         label: "Simple Assistant LLM Node".to_string(),
         provider: LLMProvider::LMStudio,
         model,

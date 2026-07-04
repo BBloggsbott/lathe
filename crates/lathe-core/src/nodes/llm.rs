@@ -9,9 +9,9 @@ use futures::future::BoxFuture;
 use rig_core::completion::Prompt;
 use rig_core::prelude::CompletionClient;
 use rig_core::providers;
+use serde_json::Value;
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
-use serde_json::Value;
 use uuid::Uuid;
 
 const LLM_NODE_DEFAULT_LABEL: &str = "LLMNode";
@@ -31,52 +31,36 @@ pub struct LLMNode {
 }
 
 impl LLMNode {
-    pub fn new(
-        id: &str,
-        label: &str,
-        provider: &LLMProvider,
-        model: &String,
-        system_prompt: &str,
-        input_key: &str,
-        output_key: &str,
-        provider_config: Option<&LLMProviderConfig>,
-    ) -> Self {
+    pub fn from_node_def(def: &LlmNodeDef, provider_configs: &LLMProviderConfigs) -> Self {
+        let provider_config = provider_configs.get(&def.provider_config_id);
         Self {
-            id: if !id.is_empty() {
-                id.to_owned()
+            id: if !&def.id.is_empty() {
+                def.id.to_owned()
             } else {
                 Uuid::new_v4().to_string()
             },
-            label: if !label.is_empty() {
-                label.to_owned()
+            label: if !&def.label.is_empty() {
+                def.label.to_owned()
             } else {
                 LLM_NODE_DEFAULT_LABEL.to_string()
             },
-            provider: provider.clone(),
-            model: model.clone(),
-            system_prompt: if !system_prompt.is_empty() {
-                system_prompt.to_owned()
+            provider: def.provider.clone(),
+            model: def.model.clone(),
+            system_prompt: if !&def.system_prompt.is_empty() {
+                def.system_prompt.to_owned()
             } else {
                 LLM_NODE_DEFAULT_SYSTEM_PROMPT.to_string()
             },
-            input_key: input_key.to_owned(),
-            output_key: output_key.to_owned(),
-            caller: build_llm_caller(provider, model, system_prompt, provider_config)
-                .expect("Unable to build llm caller"),
+            input_key: def.input_key.to_owned(),
+            output_key: def.output_key.to_owned(),
+            caller: build_llm_caller(
+                &def.provider,
+                &def.model,
+                &def.system_prompt,
+                provider_config,
+            )
+            .expect("Unable to build llm caller"),
         }
-    }
-
-    pub fn from_node_def(def: &LlmNodeDef, provider_configs: &LLMProviderConfigs) -> Self {
-        Self::new(
-            &def.id,
-            &def.label,
-            &def.provider,
-            &def.model,
-            &def.system_prompt,
-            &def.input_key,
-            &def.output_key,
-            provider_configs.get(&def.provider_config_id),
-        )
     }
 }
 
@@ -112,7 +96,10 @@ impl LatheNode for LLMNode {
 
     // todo: Not implemented. Doing this just to make clippy happy
     async fn execute(&self, mut agent_state: AgentState) -> Result<AgentState> {
-        let user_message = agent_state.get(&self.input_key).context("Cannot find input key in agent state")?.to_string();
+        let user_message = agent_state
+            .get(&self.input_key)
+            .context("Cannot find input key in agent state")?
+            .to_string();
         let response = (self.caller)(user_message).await?;
         agent_state.set(&self.output_key, Value::String(response))?;
         Ok(agent_state)
