@@ -64,7 +64,7 @@ cargo build --release
 
 ```sh
 # installed binary
-lathe example simple
+lathe example simple --provider open-ai --model gpt-5.5
 
 # or from source
 cargo run -p lathe-cli -- example simple

@@ -1,8 +1,9 @@
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ValueEnum)]
 pub enum LLMProvider {
     OpenAI,
     LMStudio,

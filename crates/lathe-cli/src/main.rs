@@ -25,6 +25,14 @@ enum Commands {
     Example {
         /// Name of the pre-defined example
         name: ExampleType,
+
+        /// LLM Provider to use for the example
+        #[arg(short, long)]
+        provider: LLMProvider,
+
+        /// Model name to use for the example
+        #[arg(short, long)]
+        model: String,
     },
 
     /// Run a pipeline from the yaml
@@ -52,8 +60,12 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    match &args.command {
-        Commands::Example { name } => {
+    match args.command {
+        Commands::Example {
+            name,
+            provider,
+            model,
+        } => {
             tracing_subscriber::fmt()
                 .without_time()
                 .with_target(false)
@@ -63,7 +75,7 @@ async fn main() -> Result<()> {
             match name {
                 ExampleType::Simple => {
                     tracing::info!("Creating example yaml");
-                    return create_example_yaml();
+                    return create_example_yaml(provider, model);
                 }
 
                 ExampleType::None => {
@@ -78,7 +90,7 @@ async fn main() -> Result<()> {
                 .with_level(true)
                 .compact()
                 .init();
-            let graph = yaml::load(pipeline)?;
+            let graph = yaml::load(pipeline.as_path())?;
             tracing::info!("Loaded pipeline: {}", graph.name);
 
             let nodes =
@@ -100,23 +112,23 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn create_example_yaml() -> Result<()> {
+fn create_example_yaml(provider: LLMProvider, model: String) -> Result<()> {
     let start_node_def = StartNodeDef {
-        id: "7560d39b-049b-4d60-9f98-ffa580b3304e".to_string(),
+        id: "start-node".to_string(),
         ..Default::default()
     };
     let end_node_def = EndNodeDef {
-        id: "3b9e624c-d161-4914-9b19-4207dbbdbae6".to_string(),
+        id: "end-node".to_string(),
         out_pointers: vec!["/output_message".to_string()],
         ..Default::default()
     };
 
-    let provider_config = LLMProviderConfig::default(&LLMProvider::LMStudio);
+    let mut provider_config = LLMProviderConfig::default(&provider);
+    provider_config.id = "my-lm-studio-model".to_string();
     // todo: Using my local model fro dev-testing. Update to a generic example.
-    let model = "qwen2.5-0.5b-instruct-quantized".to_string();
 
     let llm_node_def = LlmNodeDef {
-        id: "98723c82-349c-4baf-b750-2f23927786c8".to_string(),
+        id: "llm-node".to_string(),
         label: "Simple Assistant LLM Node".to_string(),
         provider: LLMProvider::LMStudio,
         model,

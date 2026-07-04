@@ -1027,7 +1027,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -1036,13 +1035,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "clap",
  "futures",
  "petgraph",
  "rig-core",
  "serde",
  "serde_json",
  "serde_yaml",
- "tokio",
  "tracing",
  "uuid",
 ]

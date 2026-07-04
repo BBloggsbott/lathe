@@ -14,3 +14,4 @@ uuid = {version = "1.23", features = ["v4", "serde"]}
 async-trait = "0.1"
 futures = "0.3.32"
 tracing = "0.1"
+clap = {version = "4.6.1", features = ["derive"]}
