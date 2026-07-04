@@ -11,6 +11,7 @@ use rig_core::prelude::CompletionClient;
 use rig_core::providers;
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
+use serde_json::Value;
 use uuid::Uuid;
 
 const LLM_NODE_DEFAULT_LABEL: &str = "LLMNode";
@@ -24,6 +25,8 @@ pub struct LLMNode {
     provider: LLMProvider, // Currently
     model: String,
     system_prompt: String,
+    input_key: String,
+    output_key: String,
     caller: LLMCaller,
 }
 
@@ -34,6 +37,8 @@ impl LLMNode {
         provider: &LLMProvider,
         model: &String,
         system_prompt: &str,
+        input_key: &str,
+        output_key: &str,
         provider_config: Option<&LLMProviderConfig>,
     ) -> Self {
         Self {
@@ -54,6 +59,8 @@ impl LLMNode {
             } else {
                 LLM_NODE_DEFAULT_SYSTEM_PROMPT.to_string()
             },
+            input_key: input_key.to_owned(),
+            output_key: output_key.to_owned(),
             caller: build_llm_caller(provider, model, system_prompt, provider_config)
                 .expect("Unable to build llm caller"),
         }
@@ -66,6 +73,8 @@ impl LLMNode {
             &def.provider,
             &def.model,
             &def.system_prompt,
+            &def.input_key,
+            &def.output_key,
             provider_configs.get(&def.provider_config_id),
         )
     }
@@ -102,7 +111,10 @@ impl LatheNode for LLMNode {
     }
 
     // todo: Not implemented. Doing this just to make clippy happy
-    async fn execute(&self, agent_state: AgentState) -> Result<AgentState> {
+    async fn execute(&self, mut agent_state: AgentState) -> Result<AgentState> {
+        let user_message = agent_state.get(&self.input_key).context("Cannot find input key in agent state")?.to_string();
+        let response = (self.caller)(user_message).await?;
+        agent_state.set(&self.output_key, Value::String(response))?;
         Ok(agent_state)
     }
 }

@@ -1,36 +1,38 @@
 name: Example Lathe Graph
 nodes:
 - !Start
-  id: 37e6bec0-f34e-4613-9d0a-735e1ca5622f
+  id: ba430da6-c2f8-43d7-b6b2-748d16d552a9
   label: lathe::nodes::start
 - !LLMNode
-  id: 8de77663-cee1-46ba-84d3-51fcb5a9de19
+  id: aec65bb6-c88c-47ea-ba28-ba74f32ea8e9
   label: Simple Assistant LLM Node
   provider: LMStudio
   model: qwen2.5-0.5b-instruct-quantized
   system_prompt: You are a helpful assistant
-  provider_config_id: fbc378bf-9622-4dc8-93da-af3fb56af0c9
+  input_key: /message
+  output_key: /output_message
+  provider_config_id: e93c7542-5caf-4421-abb1-66f31b2a1801
 - !End
-  id: 97c9ce5f-2c82-4f80-a73c-544a3a432864
+  id: 640066a5-e9ca-4984-844b-4342f95f2121
   label: lathe::nodes::end
   out_pointers:
-  - /message
+  - /output_message
 connections:
 - from:
-    node_id: 37e6bec0-f34e-4613-9d0a-735e1ca5622f
+    node_id: ba430da6-c2f8-43d7-b6b2-748d16d552a9
     name: to Simple Assistant LLM Node
   to:
-    node_id: 8de77663-cee1-46ba-84d3-51fcb5a9de19
+    node_id: aec65bb6-c88c-47ea-ba28-ba74f32ea8e9
     name: from lathe::nodes::start
 - from:
-    node_id: 8de77663-cee1-46ba-84d3-51fcb5a9de19
+    node_id: aec65bb6-c88c-47ea-ba28-ba74f32ea8e9
     name: to lathe::nodes::end
   to:
-    node_id: 97c9ce5f-2c82-4f80-a73c-544a3a432864
+    node_id: 640066a5-e9ca-4984-844b-4342f95f2121
     name: from Simple Assistant LLM Node
 provider_configs:
-  fbc378bf-9622-4dc8-93da-af3fb56af0c9:
-    id: fbc378bf-9622-4dc8-93da-af3fb56af0c9
+  e93c7542-5caf-4421-abb1-66f31b2a1801:
+    id: e93c7542-5caf-4421-abb1-66f31b2a1801
     base_url: null
     api_key: null
     provider: LMStudio

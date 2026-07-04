@@ -8,5 +8,7 @@ pub struct LlmNodeDef {
     pub provider: LLMProvider,
     pub model: String,
     pub system_prompt: String,
+    pub input_key: String,
+    pub output_key: String,
     pub provider_config_id: String,
 }

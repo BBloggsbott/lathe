@@ -72,7 +72,7 @@ async fn main() -> Result<()> {
 fn create_example_yaml() -> Result<()> {
     let start_node_def = StartNodeDef::default();
     let mut end_node_def = EndNodeDef::default();
-    end_node_def.out_pointers = vec!["/message".to_string()];
+    end_node_def.out_pointers = vec!["/output_message".to_string()];
 
     let provider_config = LLMProviderConfig::default(&LLMProvider::LMStudio);
     // todo: Using my local model fro dev-testing. Update to a generic example.
@@ -84,6 +84,8 @@ fn create_example_yaml() -> Result<()> {
         provider: LLMProvider::LMStudio,
         model,
         system_prompt: "You are a helpful assistant".to_string(),
+        input_key: "/message".to_string(),
+        output_key: "/output_message".to_string(),
         provider_config_id: provider_config.id.clone(),
     };
 
