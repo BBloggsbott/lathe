@@ -10,9 +10,9 @@ pub fn save(graph: &LatheGraph, path: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn load(path: &Path) -> Result<LatheGraph> {
+pub fn load(path: &Path, validate: bool) -> Result<LatheGraph> {
     let file = File::open(path)?;
     let graph_definition: GraphDefinition = serde_yaml::from_reader(file)?;
-    let graph = LatheGraph::from_def(graph_definition)?;
+    let graph = LatheGraph::from_def(graph_definition, validate)?;
     Ok(graph)
 }

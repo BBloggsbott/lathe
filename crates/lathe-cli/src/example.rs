@@ -78,7 +78,7 @@ pub fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
         provider_configs,
     };
 
-    let lathe_graph = LatheGraph::from_def(graph_definition)?;
+    let lathe_graph = LatheGraph::from_def(graph_definition, true)?;
     let mut out_path = PathBuf::from_str(".")?;
     out_path.push("examples");
     out_path.push("simple_agent.yaml");
@@ -216,7 +216,7 @@ pub fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()
         provider_configs,
     };
 
-    let lathe_graph = LatheGraph::from_def(graph_definition)?;
+    let lathe_graph = LatheGraph::from_def(graph_definition, true)?;
     let mut out_path = PathBuf::from_str(".")?;
     out_path.push("examples");
     out_path.push("explainer_agent.yaml");

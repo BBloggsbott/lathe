@@ -5,7 +5,7 @@ use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use port::Connection;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub mod port;
 
@@ -27,7 +27,7 @@ pub struct LatheGraph {
 // todo: Currently implemented as an acyclic graph. But Agentic Graphs needs cycles for retries and such.
 //  Need to explore alternative way to implement cycles in the graph
 impl LatheGraph {
-    pub fn from_def(definition: GraphDefinition) -> Result<Self> {
+    pub fn from_def(definition: GraphDefinition, validate: bool) -> Result<Self> {
         let mut digraph: DiGraph<String, ()> = DiGraph::new();
         let mut node_index_map: HashMap<String, NodeIndex> = HashMap::new();
 
@@ -55,12 +55,23 @@ impl LatheGraph {
             digraph.add_edge(from, to, ());
         }
 
-        Ok(Self {
-            name: definition.name.clone(),
-            definition,
-            node_index: node_index_map,
-            digraph,
-        })
+        if validate {
+            let lathe_graph = Self {
+                name: definition.name.clone(),
+                definition,
+                node_index: node_index_map,
+                digraph,
+            };
+            lathe_graph.validate()?;
+            Ok(lathe_graph)
+        } else {
+            Ok(Self {
+                name: definition.name.clone(),
+                definition,
+                node_index: node_index_map,
+                digraph,
+            })
+        }
     }
 
     pub fn topological_order(&self) -> Result<Vec<String>> {
@@ -72,5 +83,65 @@ impl LatheGraph {
             .into_iter()
             .map(|idx| self.digraph[idx].clone())
             .collect())
+    }
+
+    pub fn validate(&self) -> Result<()> {
+        let end_node_ids = self.end_node_ids();
+
+        if end_node_ids.len() > 1 {
+            // One end node limit because I do not have flow control nodes that support branching right now.
+            return Err(anyhow::anyhow!(
+                "Too many end nodes. Cannot have more than one end node"
+            ));
+        }
+
+        let leaf_ids: HashSet<&str> = self
+            .digraph
+            .node_indices()
+            .filter(|&idx| {
+                self.digraph
+                    .neighbors_directed(idx, petgraph::Direction::Outgoing)
+                    .count()
+                    == 0
+            })
+            .map(|idx| self.digraph[idx].as_str())
+            .collect();
+
+        let end_ids: HashSet<&str> = end_node_ids.into_iter().collect();
+
+        if leaf_ids != end_ids {
+            let mut issues: Vec<String> = vec![];
+            if leaf_ids.difference(&end_ids).count() > 0 {
+                issues.push(format!(
+                    "Found leaf nodes that are not end nodes: {:?}. Every end node must be a leaf, and every leaf must be an end node",
+                    leaf_ids.difference(&end_ids)
+                ));
+            }
+
+            if end_ids.difference(&leaf_ids).count() > 0 {
+                issues.push(format!(
+                    "Found end nodes that are not leaf nodes: {:?}. Every end node must be a leaf, and every leaf must be an end node",
+                    end_ids.difference(&leaf_ids)
+                ));
+            }
+
+            return Err(anyhow::anyhow!(issues.join("\n")));
+        }
+
+        Ok(())
+    }
+
+    fn end_node_ids(&self) -> Vec<&str> {
+        let node_ids: Vec<&str> = self
+            .definition
+            .nodes
+            .iter()
+            .filter_map(|node| match node {
+                NodeKind::End(node) => Some(node.id.as_str()),
+                _ => None,
+            })
+            .collect();
+
+        node_ids
     }
 }

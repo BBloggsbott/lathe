@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Run { pipeline, message } => {
-            let graph = yaml::load(pipeline.as_path())?;
+            let graph = yaml::load(pipeline.as_path(), true)?;
             tracing::info!("Loaded pipeline: {}", graph.name);
 
             let nodes =
