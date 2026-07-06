@@ -44,6 +44,10 @@ impl AgentState {
     pub fn is_empty(&self) -> bool {
         self.0.as_object().is_none() || self.0.as_object().unwrap().is_empty()
     }
+
+    pub fn pretty_string(&self) -> serde_json::Result<String> {
+        serde_json::to_string_pretty(&self.0)
+    }
 }
 
 fn set_value_by_pointer(root: &mut Value, pointer: &str, value: Value) -> Result<()> {

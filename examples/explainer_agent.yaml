@@ -1,0 +1,76 @@
+name: Example Lathe Graph
+nodes:
+- !Start
+  id: start-node
+  label: lathe::nodes::start
+- !LLMNode
+  id: llm-explainer-node
+  label: Explainer LLM Node
+  provider: LMStudio
+  model: qwen2.5-0.5b-instruct-quantized
+  system_prompt: You are a knowledgeable assistant who explains topics clearly. For the given question or topic, provide a detailed, well-structured explanation that builds from foundational concepts to more nuanced points, using concrete examples where helpful.
+  input_key: /message
+  output_key: /explanation
+  provider_config_id: my-model
+- !LLMNode
+  id: llm-summarizer-node
+  label: Explainer LLM Node
+  provider: LMStudio
+  model: qwen2.5-0.5b-instruct-quantized
+  system_prompt: You are a helpful assistant who summarizes text. Given the text, produce a concise summary of two to three sentences that captures the key points while preserving the original meaning.
+  input_key: /explanation
+  output_key: /summary
+  provider_config_id: my-model
+- !LLMNode
+  id: llm-topic-generator-node
+  label: Explainer LLM Node
+  provider: LMStudio
+  model: qwen2.5-0.5b-instruct-quantized
+  system_prompt: You are a helpful assistant who writes titles for text. Given some text, generate a short, descriptive title (five words or fewer) that captures its essence.
+  input_key: /explanation
+  output_key: /title
+  provider_config_id: my-model
+- !End
+  id: end-node
+  label: lathe::nodes::end
+  out_pointers:
+  - /explanation
+  - /summary
+  - /title
+connections:
+- from:
+    node_id: start-node
+    name: to Explainer LLM Node
+  to:
+    node_id: llm-explainer-node
+    name: from lathe::nodes::start
+- from:
+    node_id: llm-explainer-node
+    name: to Explainer LLM Node
+  to:
+    node_id: llm-summarizer-node
+    name: from Explainer LLM Node
+- from:
+    node_id: llm-explainer-node
+    name: to Explainer LLM Node
+  to:
+    node_id: llm-topic-generator-node
+    name: from Explainer LLM Node
+- from:
+    node_id: llm-summarizer-node
+    name: to lathe::nodes::end
+  to:
+    node_id: end-node
+    name: from Explainer LLM Node
+- from:
+    node_id: llm-topic-generator-node
+    name: to lathe::nodes::end
+  to:
+    node_id: end-node
+    name: from Explainer LLM Node
+provider_configs:
+  my-model:
+    id: my-model
+    base_url: null
+    api_key: null
+    provider: LMStudio

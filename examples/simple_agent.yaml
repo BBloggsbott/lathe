@@ -11,7 +11,7 @@ nodes:
   system_prompt: You are a helpful assistant
   input_key: /message
   output_key: /output_message
-  provider_config_id: my-lm-studio-model
+  provider_config_id: my-model
 - !End
   id: end-node
   label: lathe::nodes::end
@@ -31,8 +31,8 @@ connections:
     node_id: end-node
     name: from Simple Assistant LLM Node
 provider_configs:
-  my-lm-studio-model:
-    id: my-lm-studio-model
+  my-model:
+    id: my-model
     base_url: null
     api_key: null
     provider: LMStudio
