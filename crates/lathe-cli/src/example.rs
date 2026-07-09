@@ -27,6 +27,10 @@ pub fn create_example(
     provider: LLMProvider,
     model: String,
 ) -> Result<()> {
+    if !matches!(example_type, ExampleType::None) {
+        std::fs::create_dir_all("examples")?;
+    }
+
     match example_type {
         ExampleType::Simple => {
             tracing::info!("Creating simple agent example");

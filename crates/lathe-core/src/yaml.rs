@@ -1,13 +1,20 @@
 //! Loading and saving [`GraphDefinition`]s as YAML files.
 
 use crate::graph::{GraphDefinition, LatheGraph};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::fs::File;
 use std::path::Path;
 
 /// Writes `graph`'s underlying [`GraphDefinition`] to `path` as YAML.
 pub fn save(graph: &LatheGraph, path: &Path) -> Result<()> {
-    let out_file = File::create(path)?;
+    let out_file = File::create(path).with_context(|| match path.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() && !parent.exists() => format!(
+            "failed to create file at {}: directory {} does not exist",
+            path.display(),
+            parent.display()
+        ),
+        _ => format!("failed to create file at {}", path.display()),
+    })?;
     serde_yaml::to_writer(out_file, &graph.definition)?;
 
     Ok(())
