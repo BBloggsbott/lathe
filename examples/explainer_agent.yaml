@@ -1,3 +1,4 @@
+graph_version: V1
 name: Example Lathe Graph
 nodes:
 - !Start
@@ -17,7 +18,7 @@ nodes:
   label: Explainer LLM Node
   provider: LMStudio
   model: qwen2.5-0.5b-instruct-quantized
-  system_prompt: You are a helpful assistant who summarizes text. Given the text, produce a concise summary of two to three sentences that captures the key points while preserving the original meaning.
+  system_prompt: You are an expert in {{/message}} who summarizes text. Given the text, produce a concise summary of two to three sentences that captures the key points while preserving the original meaning.
   input_key: /explanation
   output_key: /summary
   provider_config_id: my-model
@@ -26,7 +27,7 @@ nodes:
   label: Explainer LLM Node
   provider: LMStudio
   model: qwen2.5-0.5b-instruct-quantized
-  system_prompt: You are a helpful assistant who writes titles for text. Given some text, generate a short, descriptive title (five words or fewer) that captures its essence.
+  system_prompt: You are an expert in {{/message}} who writes titles for text. Given some text, generate a short, descriptive title (five words or fewer) that captures its essence.
   input_key: /explanation
   output_key: /title
   provider_config_id: my-model

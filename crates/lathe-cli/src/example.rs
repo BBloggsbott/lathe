@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::ValueEnum;
 use lathe_core::graph::port::{Connection, Port};
-use lathe_core::graph::{GraphDefinition, LatheGraph};
+use lathe_core::graph::{GraphDefinition, GraphVersion, LatheGraph};
 use lathe_core::node_defs::llm::LlmNodeDef;
 use lathe_core::node_defs::{EndNodeDef, NodeKind, StartNodeDef};
 use lathe_core::provider::{LLMProvider, LLMProviderConfig, LLMProviderConfigs};
@@ -68,6 +68,7 @@ pub fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
     provider_configs.insert(provider_config.id.clone(), provider_config);
 
     let graph_definition = GraphDefinition {
+        graph_version: GraphVersion::V1,
         name: "Example Lathe Graph".to_string(),
         nodes: vec![
             NodeKind::Start(start_node_def),
@@ -122,7 +123,7 @@ pub fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()
         label: "Explainer LLM Node".to_string(),
         provider: LLMProvider::LMStudio,
         model: model.clone(),
-        system_prompt: "You are a helpful assistant who summarizes text. Given the text, produce a concise summary of two to three sentences that captures the key points while preserving the original meaning.".to_string(),
+        system_prompt: "You are an expert in {{/message}} who summarizes text. Given the text, produce a concise summary of two to three sentences that captures the key points while preserving the original meaning.".to_string(),
         input_key: "/explanation".to_string(),
         output_key: "/summary".to_string(),
         provider_config_id: provider_config.id.clone(),
@@ -133,7 +134,7 @@ pub fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()
         label: "Explainer LLM Node".to_string(),
         provider: LLMProvider::LMStudio,
         model: model.clone(),
-        system_prompt: "You are a helpful assistant who writes titles for text. Given some text, generate a short, descriptive title (five words or fewer) that captures its essence.".to_string(),
+        system_prompt: "You are an expert in {{/message}} who writes titles for text. Given some text, generate a short, descriptive title (five words or fewer) that captures its essence.".to_string(),
         input_key: "/explanation".to_string(),
         output_key: "/title".to_string(),
         provider_config_id: provider_config.id.clone(),
@@ -198,6 +199,7 @@ pub fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()
     provider_configs.insert(provider_config.id.clone(), provider_config);
 
     let graph_definition = GraphDefinition {
+        graph_version: GraphVersion::V1,
         name: "Example Lathe Graph".to_string(),
         nodes: vec![
             NodeKind::Start(start_node_def),

@@ -11,13 +11,21 @@ pub mod port;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GraphDefinition {
+    pub graph_version: GraphVersion,
     pub name: String,
     pub nodes: Vec<NodeKind>,
     pub connections: Vec<Connection>,
     pub provider_configs: LLMProviderConfigs,
 }
 
+#[derive(Debug, Serialize, Deserialize, Default, Clone, Copy)]
+pub enum GraphVersion {
+    #[default]
+    V1,
+}
+
 pub struct LatheGraph {
+    pub graph_version: GraphVersion,
     pub name: String,
     pub definition: GraphDefinition,
     pub node_index: HashMap<String, NodeIndex>,
@@ -57,6 +65,7 @@ impl LatheGraph {
 
         if validate {
             let lathe_graph = Self {
+                graph_version: definition.graph_version,
                 name: definition.name.clone(),
                 definition,
                 node_index: node_index_map,
@@ -66,6 +75,7 @@ impl LatheGraph {
             Ok(lathe_graph)
         } else {
             Ok(Self {
+                graph_version: definition.graph_version,
                 name: definition.name.clone(),
                 definition,
                 node_index: node_index_map,
@@ -87,14 +97,6 @@ impl LatheGraph {
 
     pub fn validate(&self) -> Result<()> {
         let end_node_ids = self.end_node_ids();
-
-        if end_node_ids.len() > 1 {
-            // One end node limit because I do not have flow control nodes that support branching right now.
-            return Err(anyhow::anyhow!(
-                "Too many end nodes. Cannot have more than one end node"
-            ));
-        }
-
         let leaf_ids: HashSet<&str> = self
             .digraph
             .node_indices()

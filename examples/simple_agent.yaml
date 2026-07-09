@@ -1,3 +1,4 @@
+graph_version: V1
 name: Example Lathe Graph
 nodes:
 - !Start

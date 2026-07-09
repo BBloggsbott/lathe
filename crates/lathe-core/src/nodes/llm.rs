@@ -2,11 +2,12 @@ use crate::node_defs::llm::LlmNodeDef;
 use crate::nodes::LatheNode;
 use crate::provider::{LLMProvider, LLMProviderConfig, LLMProviderConfigs};
 use crate::state::AgentState;
+use crate::template;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use futures::FutureExt;
 use futures::future::BoxFuture;
-use rig_core::completion::Prompt;
+use rig_core::completion::{Message, Prompt};
 use rig_core::prelude::CompletionClient;
 use rig_core::providers;
 use serde_json::Value;
@@ -17,7 +18,7 @@ use uuid::Uuid;
 const LLM_NODE_DEFAULT_LABEL: &str = "LLMNode";
 const LLM_NODE_DEFAULT_SYSTEM_PROMPT: &str = "You are a helpful assistant";
 
-type LLMCaller = Box<dyn Fn(String) -> BoxFuture<'static, Result<String>> + Send + Sync>;
+type LLMCaller = Box<dyn Fn(String, String) -> BoxFuture<'static, Result<String>> + Send + Sync>;
 
 pub struct LLMNode {
     id: String,
@@ -100,7 +101,11 @@ impl LatheNode for LLMNode {
             .get(&self.input_key)
             .context("Cannot find input key in agent state")?
             .to_string();
-        let response = (self.caller)(user_message).await?;
+        let response = (self.caller)(
+            template::resolve(self.system_prompt.as_str(), &agent_state)?,
+            user_message,
+        )
+        .await?;
         agent_state.set(&self.output_key, Value::String(response))?;
         Ok(agent_state)
     }
@@ -152,16 +157,19 @@ fn build_openai_closure(
 
     let agent = Arc::new(client.agent(model).preamble(system_prompt).build());
 
-    Ok(Box::new(move |prompt: String| {
-        let agent = Arc::clone(&agent);
-        async move {
-            agent
-                .prompt(prompt.as_str())
-                .await
-                .map_err(anyhow::Error::from)
-        }
-        .boxed()
-    }))
+    Ok(Box::new(
+        move |system_prompt: String, user_message: String| {
+            let agent = Arc::clone(&agent);
+            async move {
+                agent
+                    .prompt(user_message.as_str())
+                    .with_history(vec![Message::system(system_prompt)])
+                    .await
+                    .map_err(anyhow::Error::from)
+            }
+            .boxed()
+        },
+    ))
 }
 
 // todo: Move default handling to Provider config
@@ -184,14 +192,17 @@ fn build_lmstudio_closure(
 
     let agent = Arc::new(client.agent(model).preamble(system_prompt).build());
 
-    Ok(Box::new(move |prompt: String| {
-        let agent = Arc::clone(&agent);
-        async move {
-            agent
-                .prompt(prompt.as_str())
-                .await
-                .map_err(anyhow::Error::from)
-        }
-        .boxed()
-    }))
+    Ok(Box::new(
+        move |system_prompt: String, user_message: String| {
+            let agent = Arc::clone(&agent);
+            async move {
+                agent
+                    .prompt(user_message.as_str())
+                    .with_history(vec![Message::system(system_prompt)])
+                    .await
+                    .map_err(anyhow::Error::from)
+            }
+            .boxed()
+        },
+    ))
 }
