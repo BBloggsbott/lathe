@@ -46,6 +46,26 @@ examples/
 - Rust toolchain (stable)
 - An LLM provider (OpenAI API key or a running LM Studio instance)
 
+### Download a prebuilt binary
+
+Prebuilt `lathe` binaries for each [release](https://github.com/BBloggsbott/lathe/releases/latest) are attached as assets:
+
+| Platform | Asset |
+|----------|-------|
+| Linux (x86_64) | `lathe-linux-x86_64` |
+| macOS (Intel) | `lathe-macos-x86_64` |
+| macOS (Apple Silicon) | `lathe-macos-aarch64` |
+| Windows (x86_64) | `lathe-windows-x86_64.exe` |
+
+```sh
+# Linux / macOS — pick the asset name for your platform from the table above
+curl -L -o lathe https://github.com/BBloggsbott/lathe/releases/latest/download/lathe-linux-x86_64
+chmod +x lathe
+sudo mv lathe /usr/local/bin/
+```
+
+On Windows, download `lathe-windows-x86_64.exe` from the [latest release](https://github.com/BBloggsbott/lathe/releases/latest) and place it somewhere on your `PATH`.
+
 ### Build and install the release binary
 
 ```sh
