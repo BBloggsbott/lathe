@@ -67,7 +67,7 @@ fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
     let llm_node_def = LlmNodeDef {
         id: "llm-node".to_string(),
         label: "Simple Assistant LLM Node".to_string(),
-        provider: LLMProvider::LMStudio,
+        provider,
         model,
         system_prompt: "You are a helpful assistant".to_string(),
         input_key: "/message".to_string(),
@@ -144,7 +144,7 @@ fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
     let llm_explainer_node_def = LlmNodeDef {
         id: "llm-explainer-node".to_string(),
         label: "Explainer LLM Node".to_string(),
-        provider: LLMProvider::LMStudio,
+        provider: provider.clone(),
         model: model.clone(),
         system_prompt: "You are a knowledgeable assistant who explains topics clearly. For the given question or topic, provide a detailed, well-structured explanation that builds from foundational concepts to more nuanced points, using concrete examples where helpful.".to_string(),
         input_key: "/message".to_string(),
@@ -155,7 +155,7 @@ fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
     let llm_summarizer_node_def = LlmNodeDef {
         id: "llm-summarizer-node".to_string(),
         label: "Explainer LLM Node".to_string(),
-        provider: LLMProvider::LMStudio,
+        provider: provider.clone(),
         model: model.clone(),
         system_prompt: "You are an expert in {{/message}} who summarizes text. Given the text, produce a concise summary of two to three sentences that captures the key points while preserving the original meaning.".to_string(),
         input_key: "/explanation".to_string(),
@@ -166,7 +166,7 @@ fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
     let llm_topic_generator_node_def = LlmNodeDef {
         id: "llm-topic-generator-node".to_string(),
         label: "Explainer LLM Node".to_string(),
-        provider: LLMProvider::LMStudio,
+        provider: provider.clone(),
         model: model.clone(),
         system_prompt: "You are an expert in {{/message}} who writes titles for text. Given some text, generate a short, descriptive title (five words or fewer) that captures its essence.".to_string(),
         input_key: "/explanation".to_string(),

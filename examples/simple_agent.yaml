@@ -7,8 +7,8 @@ nodes:
 - !LLMNode
   id: llm-node
   label: Simple Assistant LLM Node
-  provider: LMStudio
-  model: qwen2.5-0.5b-instruct-quantized
+  provider: OpenAI
+  model: gpt-5-mini
   system_prompt: You are a helpful assistant
   input_key: /message
   output_key: /output_message
@@ -36,4 +36,4 @@ provider_configs:
     id: my-model
     base_url: null
     api_key: null
-    provider: LMStudio
+    provider: OpenAI
