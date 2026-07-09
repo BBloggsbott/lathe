@@ -99,7 +99,7 @@ impl LatheGraph {
     /// Errors if the graph contains a cycle.
     pub fn topological_order(&self) -> Result<Vec<String>> {
         let sorted = toposort(&self.digraph, None).map_err(|cycle| {
-            anyhow::anyhow!("graph contains a cycle: {}", &self.digraph[cycle.node_id()])
+            anyhow::anyhow!("graph contains a cycle: {}", self.digraph[cycle.node_id()])
         })?;
 
         Ok(sorted
