@@ -2,6 +2,11 @@
 name = "lathe-server"
 version = "0.1.0"
 edition = "2024"
+description = "Axum HTTP server for exposing Lathe AI agent pipelines as an API"
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme = "../../README.md"
 
 [dependencies]
 axum = "0.8.9"

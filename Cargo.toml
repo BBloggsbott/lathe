@@ -2,6 +2,11 @@
 members = ["crates/lathe-cli","crates/lathe-core", "crates/lathe-server"]
 resolver = "3"
 
+[workspace.package]
+license = "GPL-3.0-only"
+homepage = "https://github.com/BBloggsbott/lathe"
+repository = "https://github.com/BBloggsbott/lathe"
+
 [workspace.dependencies]
 rig-core = "0.39.0"
 petgraph = {version = "0.8.3", features = ["serde-1"]}

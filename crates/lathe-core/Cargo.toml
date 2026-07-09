@@ -2,6 +2,11 @@
 name = "lathe-core"
 version = "0.1.0"
 edition = "2024"
+description = "Core graph, executor, and node types for building YAML-defined AI agent pipelines"
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme = "../../README.md"
 
 [dependencies]
 petgraph = {workspace = true}
