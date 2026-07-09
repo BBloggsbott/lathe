@@ -16,7 +16,26 @@ pub enum ExampleType {
     None,
 }
 
-pub fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
+pub fn create_example(example_type: ExampleType, provider: LLMProvider, model: String) -> Result<()> {
+    match example_type {
+        ExampleType::Simple => {
+            tracing::info!("Creating simple agent example");
+            create_simple_agent(provider, model)
+        }
+
+        ExampleType::Explainer => {
+            tracing::info!("Creating explainer agent example");
+            create_explainer_agent(provider, model)
+        }
+
+        ExampleType::None => {
+            tracing::info!("Not creating example yaml");
+            Ok(())
+        }
+    }
+}
+
+fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
     let start_node_def = StartNodeDef {
         id: "start-node".to_string(),
         ..Default::default()
@@ -88,7 +107,7 @@ pub fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
     // Ok(())
 }
 
-pub fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
+fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
     let start_node_def = StartNodeDef {
         id: "start-node".to_string(),
         ..Default::default()

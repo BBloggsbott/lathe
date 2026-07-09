@@ -1,13 +1,11 @@
 pub mod example;
+pub mod run;
 
-use crate::example::{ExampleType, create_explainer_agent, create_simple_agent};
+use crate::example::{create_example, ExampleType};
+use crate::run::run_pipeline;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use lathe_core::executor::Executor;
 use lathe_core::provider::LLMProvider;
-use lathe_core::state::AgentState;
-use lathe_core::{registry, yaml};
-use serde_json::{Map, Value};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -54,7 +52,7 @@ async fn main() -> Result<()> {
 
     match args.command {
         Commands::Example {
-            name,
+            name: example_type,
             provider,
             model,
         } => {
@@ -64,39 +62,10 @@ async fn main() -> Result<()> {
                 .with_level(true)
                 .compact()
                 .init();
-            match name {
-                ExampleType::Simple => {
-                    tracing::info!("Creating simple agent example");
-                    return create_simple_agent(provider, model);
-                }
-
-                ExampleType::Explainer => {
-                    tracing::info!("Creating explainer agent example");
-                    return create_explainer_agent(provider, model);
-                }
-
-                ExampleType::None => {
-                    tracing::info!("Not creating example yaml");
-                }
-            }
+            create_example(example_type, provider, model)?;
         }
         Commands::Run { pipeline, message } => {
-            let graph = yaml::load(pipeline.as_path(), true)?;
-            tracing::info!("Loaded pipeline: {}", graph.name);
-
-            let nodes =
-                registry::inflate(&graph.definition.nodes, &graph.definition.provider_configs)?;
-            tracing::info!("Executable nodes built: {} nodes", nodes.len());
-
-            let executor = Executor::new(graph, nodes);
-
-            let mut message_as_state = Map::new();
-            message_as_state.insert("message".to_string(), Value::String(message.clone()));
-
-            let initial = AgentState::new(message_as_state);
-            let result = executor.run(initial).await?;
-
-            println!("{}", result.pretty_string()?);
+            run_pipeline(pipeline, message).await?;
         }
     }
 
