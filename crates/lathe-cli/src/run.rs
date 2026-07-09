@@ -41,7 +41,10 @@ mod tests {
     impl TempYamlPath {
         fn new(name: &str) -> Self {
             let mut path = std::env::temp_dir();
-            path.push(format!("lathe-run-test-{name}-{}.yaml", uuid::Uuid::new_v4()));
+            path.push(format!(
+                "lathe-run-test-{name}-{}.yaml",
+                uuid::Uuid::new_v4()
+            ));
             Self(path)
         }
     }
@@ -90,13 +93,20 @@ mod tests {
         let temp = TempYamlPath::new("valid");
         write_start_end_pipeline(&temp.0);
 
-        assert!(run_pipeline(temp.0.clone(), "hello".to_string()).await.is_ok());
+        assert!(
+            run_pipeline(temp.0.clone(), "hello".to_string())
+                .await
+                .is_ok()
+        );
     }
 
     #[tokio::test]
     async fn run_pipeline_errors_for_a_missing_file() {
         let mut path = std::env::temp_dir();
-        path.push(format!("lathe-run-test-missing-{}.yaml", uuid::Uuid::new_v4()));
+        path.push(format!(
+            "lathe-run-test-missing-{}.yaml",
+            uuid::Uuid::new_v4()
+        ));
 
         assert!(run_pipeline(path, "hello".to_string()).await.is_err());
     }

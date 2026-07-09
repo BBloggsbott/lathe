@@ -241,7 +241,9 @@ mod tests {
     #[test]
     fn select_projects_requested_pointers() {
         let state = state_with(json!({"foo": "bar", "baz": {"qux": 1}, "unused": true}));
-        let selected = state.select(&vec!["/foo".to_string(), "/baz/qux".to_string()]).unwrap();
+        let selected = state
+            .select(&vec!["/foo".to_string(), "/baz/qux".to_string()])
+            .unwrap();
         assert_eq!(selected.get("/foo"), Some(&json!("bar")));
         assert_eq!(selected.get("/baz/qux"), Some(&json!(1)));
         assert_eq!(selected.get("/unused"), None);

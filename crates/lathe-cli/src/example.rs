@@ -303,7 +303,12 @@ mod tests {
         let cleanup = ExamplesDirCleanup::setup();
         let path = cleanup.dir.join("simple_agent.yaml");
 
-        create_example(ExampleType::Simple, LLMProvider::LMStudio, "test-model".to_string()).unwrap();
+        create_example(
+            ExampleType::Simple,
+            LLMProvider::LMStudio,
+            "test-model".to_string(),
+        )
+        .unwrap();
 
         let graph = yaml::load(&path, true).unwrap();
         assert_eq!(graph.name, "Example Lathe Graph - Simple");
@@ -315,7 +320,12 @@ mod tests {
         let cleanup = ExamplesDirCleanup::setup();
         let path = cleanup.dir.join("explainer_agent.yaml");
 
-        create_example(ExampleType::Explainer, LLMProvider::LMStudio, "test-model".to_string()).unwrap();
+        create_example(
+            ExampleType::Explainer,
+            LLMProvider::LMStudio,
+            "test-model".to_string(),
+        )
+        .unwrap();
 
         let graph = yaml::load(&path, true).unwrap();
         assert_eq!(graph.name, "Example Lathe Graph - Explainer");
@@ -325,8 +335,12 @@ mod tests {
     #[test]
     fn create_example_none_is_a_no_op() {
         assert!(
-            create_example(ExampleType::None, LLMProvider::LMStudio, "test-model".to_string())
-                .is_ok()
+            create_example(
+                ExampleType::None,
+                LLMProvider::LMStudio,
+                "test-model".to_string()
+            )
+            .is_ok()
         );
     }
 }

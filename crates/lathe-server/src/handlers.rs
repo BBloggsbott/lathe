@@ -78,7 +78,9 @@ mod tests {
         };
 
         let graph = LatheGraph::from_def(definition, true).unwrap();
-        let nodes = registry::materialize(&graph.definition.nodes, &graph.definition.provider_configs).unwrap();
+        let nodes =
+            registry::materialize(&graph.definition.nodes, &graph.definition.provider_configs)
+                .unwrap();
         let executor = Executor::new(graph, nodes);
 
         Arc::new(ServerState {

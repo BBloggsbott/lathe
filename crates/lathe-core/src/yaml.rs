@@ -96,7 +96,10 @@ mod tests {
     #[test]
     fn load_nonexistent_file_errors() {
         let mut path = std::env::temp_dir();
-        path.push(format!("lathe-yaml-test-missing-{}.yaml", uuid::Uuid::new_v4()));
+        path.push(format!(
+            "lathe-yaml-test-missing-{}.yaml",
+            uuid::Uuid::new_v4()
+        ));
         assert!(load(&path, true).is_err());
     }
 }

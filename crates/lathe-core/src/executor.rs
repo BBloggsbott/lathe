@@ -88,7 +88,9 @@ mod tests {
     #[tokio::test]
     async fn run_threads_state_through_nodes_and_selects_output() {
         let graph = start_end_graph(vec!["/message".to_string()]);
-        let nodes = registry::materialize(&graph.definition.nodes, &graph.definition.provider_configs).unwrap();
+        let nodes =
+            registry::materialize(&graph.definition.nodes, &graph.definition.provider_configs)
+                .unwrap();
         let executor = Executor::new(graph, nodes);
 
         let initial = AgentState::try_from(json!({"message": "hello"})).unwrap();
