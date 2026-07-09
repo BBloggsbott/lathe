@@ -14,7 +14,7 @@ impl Executor {
         Self { graph, nodes }
     }
 
-    pub async fn run_v1_graph(&self, agent_state: AgentState) -> Result<AgentState> {
+    async fn run_v1_graph(&self, agent_state: AgentState) -> Result<AgentState> {
         let order = self.graph.topological_order()?;
         let mut state = agent_state;
 

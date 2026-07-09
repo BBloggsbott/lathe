@@ -16,7 +16,11 @@ pub enum ExampleType {
     None,
 }
 
-pub fn create_example(example_type: ExampleType, provider: LLMProvider, model: String) -> Result<()> {
+pub fn create_example(
+    example_type: ExampleType,
+    provider: LLMProvider,
+    model: String,
+) -> Result<()> {
     match example_type {
         ExampleType::Simple => {
             tracing::info!("Creating simple agent example");
@@ -88,7 +92,7 @@ fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
 
     let graph_definition = GraphDefinition {
         graph_version: GraphVersion::V1,
-        name: "Example Lathe Graph".to_string(),
+        name: "Example Lathe Graph - Simple".to_string(),
         nodes: vec![
             NodeKind::Start(start_node_def),
             NodeKind::LLMNode(llm_node_def),
@@ -219,7 +223,7 @@ fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
 
     let graph_definition = GraphDefinition {
         graph_version: GraphVersion::V1,
-        name: "Example Lathe Graph".to_string(),
+        name: "Example Lathe Graph - Explainer".to_string(),
         nodes: vec![
             NodeKind::Start(start_node_def),
             NodeKind::LLMNode(llm_explainer_node_def),

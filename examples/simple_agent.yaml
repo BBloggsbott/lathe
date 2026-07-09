@@ -1,5 +1,5 @@
 graph_version: V1
-name: Example Lathe Graph
+name: Example Lathe Graph - Simple
 nodes:
 - !Start
   id: start-node

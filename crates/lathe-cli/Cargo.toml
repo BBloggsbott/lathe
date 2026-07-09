@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 lathe-core = {path = "../lathe-core"}
+lathe-server = {path = "../lathe-server"}
 tokio = {workspace = true}
 anyhow = {workspace = true}
 clap = {workspace = true}

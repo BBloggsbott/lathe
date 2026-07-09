@@ -1,8 +1,8 @@
 pub mod example;
 pub mod run;
+pub mod server;
 
-use crate::example::{create_example, ExampleType};
-use crate::run::run_pipeline;
+use crate::example::ExampleType;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use lathe_core::provider::LLMProvider;
@@ -41,6 +41,21 @@ enum Commands {
         #[arg(short, long)]
         message: String,
     },
+
+    /// Launch the Lathe Server
+    Server {
+        /// Path to the pipeline YAML file
+        #[arg(short, long)]
+        pipeline: PathBuf,
+
+        /// Host for the server
+        #[arg(short = 'H', long, default_value = "127.0.0.1")]
+        host: String,
+
+        /// Port for the server
+        #[arg(short = 'P', long, default_value = "8080")]
+        port: u16,
+    },
 }
 
 #[tokio::main]
@@ -62,10 +77,18 @@ async fn main() -> Result<()> {
                 .with_level(true)
                 .compact()
                 .init();
-            create_example(example_type, provider, model)?;
+            example::create_example(example_type, provider, model)?;
         }
         Commands::Run { pipeline, message } => {
-            run_pipeline(pipeline, message).await?;
+            run::run_pipeline(pipeline, message).await?;
+        }
+        Commands::Server {
+            pipeline,
+            host,
+            port,
+        } => {
+            tracing_subscriber::fmt().init();
+            server::start_server(pipeline, host.as_str(), port).await?;
         }
     }
 
