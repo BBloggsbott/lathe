@@ -17,8 +17,9 @@ A pipeline YAML describes:
 
 ```
 crates/
-  lathe-core/   # Graph, executor, node types, state, YAML serialization
-  lathe-cli/    # CLI entry point
+  lathe-core/     # Graph, executor, node types, state, templating, YAML serialization
+  lathe-cli/      # CLI entry point
+  lathe-server/   # Axum HTTP server exposing a pipeline as an API
 examples/
   simple_lathe_graph.yaml
 ```
@@ -89,9 +90,33 @@ export OPENAI_API_KEY=sk-...
 # or add it to a .env file
 ```
 
+### Serve a pipeline over HTTP
+
+```sh
+# installed binary
+lathe server --pipeline examples/simple_lathe_graph.yaml --host 127.0.0.1 --port 8080
+
+# or from source
+cargo run -p lathe-cli -- server --pipeline examples/simple_lathe_graph.yaml
+```
+
+This exposes:
+
+| Route | Description |
+|-------|-------------|
+| `GET /health` | Liveness check; returns `{"status": "ok", "pipeline": "<name>"}`. |
+| `POST /invoke` | Runs the pipeline with the request JSON body as the initial `AgentState`, returning the resulting state. |
+
+```sh
+curl -X POST http://127.0.0.1:8080/invoke \
+  -H 'Content-Type: application/json' \
+  -d '{"message": "Hello!"}'
+```
+
 ## Pipeline YAML format
 
 ```yaml
+graph_version: V1
 name: My Agent
 
 provider_configs:
@@ -111,7 +136,7 @@ nodes:
   label: My LLM Step
   provider: OpenAI
   model: gpt-4o-mini
-  system_prompt: You are a helpful assistant.
+  system_prompt: You are a helpful assistant. The user's name is {{/user_name}}.
   input_key: /message       # JSON Pointer into AgentState
   output_key: /response     # where to write the LLM response
   provider_config_id: my-openai-config
@@ -137,9 +162,19 @@ connections:
     name: from My LLM Step
 ```
 
+### Templated system prompts
+
+An `LLMNode`'s `system_prompt` can reference values from the `AgentState` using `{{/pointer}}` placeholders, where `pointer` is a [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901). Placeholders are resolved against the current state just before the node calls the LLM.
+
+### Validation
+
+Loading a graph with validation enabled (the default for `lathe run` and `lathe server`) checks that:
+- every connection references a node that exists in the graph
+- every leaf node (no outgoing edges) is an `End` node, and vice versa
+
 ## Roadmap
 
-- [ ] **Web server** — serve a pipeline as an HTTP API endpoint
+- [x] **Web server** — serve a pipeline as an HTTP API endpoint
 - [ ] Multi-turn conversation support
 - [ ] Additional node types (branching, tool calls, etc.)
 - [ ] Cyclic graph support for retry loops and iterative agents

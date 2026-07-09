@@ -3,9 +3,13 @@ name = "lathe-cli"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "lathe"
+path = "src/main.rs"
+
 [dependencies]
-lathe-core = {path = "../lathe-core"}
-lathe-server = {path = "../lathe-server"}
+lathe-core = {path = "../lathe-core", version = "0.1.0"}
+lathe-server = {path = "../lathe-server", version = "0.1.0"}
 tokio = {workspace = true}
 anyhow = {workspace = true}
 clap = {workspace = true}
