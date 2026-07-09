@@ -1,3 +1,6 @@
+//! Converts serializable [`NodeKind`] definitions into runtime [`LatheNode`]s that an
+//! [`crate::executor::Executor`] can run.
+
 use crate::node_defs::NodeKind;
 use crate::nodes::LatheNode;
 use crate::nodes::end::EndNode;
@@ -7,9 +10,12 @@ use crate::provider::LLMProviderConfigs;
 use anyhow::Result;
 use std::collections::HashMap;
 
+/// Runtime nodes keyed by node ID, ready to be handed to [`crate::executor::Executor::new`].
 pub type ExecutableNodes = HashMap<String, Box<dyn LatheNode>>;
 
-pub fn inflate(
+/// Builds an [`ExecutableNodes`] map by instantiating the concrete runtime node for each
+/// [`NodeKind`] in `nodes`, resolving any LLM nodes' providers against `provider_configs`.
+pub fn materialize(
     nodes: &[NodeKind],
     provider_configs: &LLMProviderConfigs,
 ) -> Result<ExecutableNodes> {

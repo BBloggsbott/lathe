@@ -1,7 +1,13 @@
+//! Minimal `{{/pointer}}` templating over [`AgentState`], used to fill LLM system prompts with
+//! values from prior pipeline steps.
+
 use crate::state::AgentState;
 use anyhow::{Result, bail};
 use serde_json::Value;
 
+/// Checks that every `{{/pointer}}` placeholder in `template` is well-formed (a `/`-prefixed
+/// JSON Pointer, properly closed) and resolves against `agent_state`, without building the
+/// resolved string.
 pub fn validate(template: &str, agent_state: &AgentState) -> Result<()> {
     let mut processing_template = template;
 

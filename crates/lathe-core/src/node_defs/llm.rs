@@ -1,6 +1,10 @@
 use crate::provider::LLMProvider;
 use serde::{Deserialize, Serialize};
 
+/// Serializable definition of an LLM-backed node: which provider/model to call, the system
+/// prompt (which may reference agent state via `{{/pointer}}` templates), and which agent
+/// state keys to read the user message from and write the response to. Turned into a runnable
+/// [`crate::nodes::llm::LLMNode`] via [`crate::registry::materialize`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LlmNodeDef {
     pub id: String,

@@ -1,3 +1,6 @@
+//! Generates ready-to-run example pipeline YAML files under `./examples`, used by the
+//! `lathe example` CLI subcommand to demonstrate graph construction.
+
 use anyhow::Result;
 use clap::ValueEnum;
 use lathe_core::graph::port::{Connection, Port};
@@ -9,6 +12,7 @@ use lathe_core::yaml;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+/// Which built-in example pipeline to generate.
 #[derive(Debug, Clone, ValueEnum)]
 pub enum ExampleType {
     Simple,
@@ -16,6 +20,8 @@ pub enum ExampleType {
     None,
 }
 
+/// Writes the YAML for `example_type` to `./examples`, configured to use `provider`/`model`.
+/// `ExampleType::None` is a no-op.
 pub fn create_example(
     example_type: ExampleType,
     provider: LLMProvider,
@@ -39,6 +45,7 @@ pub fn create_example(
     }
 }
 
+/// Builds and saves a minimal Start -> LLM -> End pipeline to `examples/simple_agent.yaml`.
 fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
     let start_node_def = StartNodeDef {
         id: "start-node".to_string(),
@@ -111,6 +118,8 @@ fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
     // Ok(())
 }
 
+/// Builds and saves a fan-out pipeline (Start -> explainer LLM -> summarizer + title-generator
+/// LLMs -> End) to `examples/explainer_agent.yaml`.
 fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
     let start_node_def = StartNodeDef {
         id: "start-node".to_string(),

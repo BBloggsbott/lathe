@@ -18,8 +18,15 @@ use uuid::Uuid;
 const LLM_NODE_DEFAULT_LABEL: &str = "LLMNode";
 const LLM_NODE_DEFAULT_SYSTEM_PROMPT: &str = "You are a helpful assistant";
 
+/// A closure that prompts an LLM with `(system_prompt, user_message)` and resolves to the
+/// model's text response. Built once per node by [`build_llm_caller`] so the underlying client
+/// and agent are reused across calls.
 type LLMCaller = Box<dyn Fn(String, String) -> BoxFuture<'static, Result<String>> + Send + Sync>;
 
+/// A node that calls out to an LLM. Reads its user message from `input_key` in the agent
+/// state, resolves the system prompt's `{{/pointer}}` templates against that same state, and
+/// writes the model's response to `output_key`. Built from an [`LlmNodeDef`] via
+/// [`Self::from_node_def`].
 pub struct LLMNode {
     id: String,
     label: String,
@@ -32,6 +39,11 @@ pub struct LLMNode {
 }
 
 impl LLMNode {
+    /// Builds an [`LLMNode`] from its serializable definition, resolving `def.provider_config_id`
+    /// against `provider_configs` (falling back to [`LLMProviderConfig::default`] if not found)
+    /// and eagerly constructing the underlying LLM client/agent. Missing `id`/`label`/
+    /// `system_prompt` fall back to generated/default values. Panics if the client cannot be
+    /// built (e.g. missing API key).
     pub fn from_node_def(def: &LlmNodeDef, provider_configs: &LLMProviderConfigs) -> Self {
         let provider_config = provider_configs.get(&def.provider_config_id);
         Self {
@@ -95,6 +107,8 @@ impl LatheNode for LLMNode {
         self.id.as_str()
     }
 
+    /// Resolves the system prompt template against `agent_state`, prompts the LLM with the
+    /// value at `input_key`, and writes the response to `output_key`.
     // todo: Not implemented. Doing this just to make clippy happy
     async fn execute(&self, mut agent_state: AgentState) -> Result<AgentState> {
         let user_message = agent_state
@@ -111,6 +125,8 @@ impl LatheNode for LLMNode {
     }
 }
 
+/// Dispatches to the provider-specific closure builder for `provider`, falling back to
+/// [`LLMProviderConfig::default`] when no config was resolved for the node.
 fn build_llm_caller(
     provider: &LLMProvider,
     model: &String,
@@ -134,6 +150,8 @@ fn build_llm_caller(
     }
 }
 
+/// Builds an [`LLMCaller`] backed by the OpenAI-compatible `rig_core` client. Reads the API key
+/// from `openai_api_key` or, if absent, the `OPENAI_API_KEY` env var; uses `base_url` if given.
 // todo: Move default handling to Provider config
 fn build_openai_closure(
     base_url: Option<&String>,
@@ -172,6 +190,9 @@ fn build_openai_closure(
     ))
 }
 
+/// Builds an [`LLMCaller`] backed by a local LM Studio server via the OpenAI-compatible
+/// `rig_core` client. Defaults `base_url` to `http://localhost:1234/v1` and uses a placeholder
+/// API key, since LM Studio does not require authentication.
 // todo: Move default handling to Provider config
 fn build_lmstudio_closure(
     base_url: Option<&String>,

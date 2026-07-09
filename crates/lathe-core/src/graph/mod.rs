@@ -9,6 +9,10 @@ use std::collections::{HashMap, HashSet};
 
 pub mod port;
 
+/// Serializable, storage-format description of a pipeline: its nodes, the connections between
+/// them, and the provider configs those nodes reference. This is what gets read from and
+/// written to YAML via [`crate::yaml`]; use [`LatheGraph::from_def`] to turn it into a runnable,
+/// validated graph.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GraphDefinition {
     pub graph_version: GraphVersion,
@@ -18,12 +22,16 @@ pub struct GraphDefinition {
     pub provider_configs: LLMProviderConfigs,
 }
 
+/// Schema version of a [`GraphDefinition`], used by [`crate::executor::Executor`] to pick the
+/// correct execution strategy.
 #[derive(Debug, Serialize, Deserialize, Default, Clone, Copy)]
 pub enum GraphVersion {
     #[default]
     V1,
 }
 
+/// A [`GraphDefinition`] indexed into a [`petgraph`] directed graph, ready for topological
+/// execution. Node IDs are used as vertices; edges come from the definition's connections.
 pub struct LatheGraph {
     pub graph_version: GraphVersion,
     pub name: String,
@@ -35,6 +43,9 @@ pub struct LatheGraph {
 // todo: Currently implemented as an acyclic graph. But Agentic Graphs needs cycles for retries and such.
 //  Need to explore alternative way to implement cycles in the graph
 impl LatheGraph {
+    /// Builds a [`LatheGraph`] from a [`GraphDefinition`], indexing nodes and connections into
+    /// a digraph. When `validate` is `true`, also runs [`Self::validate`] and returns its error
+    /// (if any) instead of the constructed graph.
     pub fn from_def(definition: GraphDefinition, validate: bool) -> Result<Self> {
         let mut digraph: DiGraph<String, ()> = DiGraph::new();
         let mut node_index_map: HashMap<String, NodeIndex> = HashMap::new();
@@ -84,6 +95,8 @@ impl LatheGraph {
         }
     }
 
+    /// Returns node IDs in topological (dependency-respecting) execution order.
+    /// Errors if the graph contains a cycle.
     pub fn topological_order(&self) -> Result<Vec<String>> {
         let sorted = toposort(&self.digraph, None).map_err(|cycle| {
             anyhow::anyhow!("graph contains a cycle: {}", &self.digraph[cycle.node_id()])
@@ -95,6 +108,8 @@ impl LatheGraph {
             .collect())
     }
 
+    /// Checks that the graph's leaf nodes (no outgoing edges) exactly match its declared
+    /// [`NodeKind::End`] nodes. Every end node must be a leaf and vice versa.
     pub fn validate(&self) -> Result<()> {
         let end_node_ids = self.end_node_ids();
         let leaf_ids: HashSet<&str> = self
@@ -133,6 +148,7 @@ impl LatheGraph {
         Ok(())
     }
 
+    /// IDs of all [`NodeKind::End`] nodes in the underlying definition.
     fn end_node_ids(&self) -> Vec<&str> {
         let node_ids: Vec<&str> = self
             .definition

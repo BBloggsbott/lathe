@@ -1,3 +1,6 @@
+//! `lathe` CLI entry point: generate example pipelines, run a pipeline once from the terminal,
+//! or serve one over HTTP.
+
 pub mod example;
 pub mod run;
 pub mod server;
@@ -15,6 +18,7 @@ struct Args {
     command: Commands,
 }
 
+/// Top-level `lathe` subcommands.
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Create an example Graph's yaml
@@ -58,6 +62,7 @@ enum Commands {
     },
 }
 
+/// Parses CLI args, loads `.env`, and dispatches to the selected [`Commands`] variant.
 #[tokio::main]
 async fn main() -> Result<()> {
     // Load .env (OPENAI_API_KEY etc.)
@@ -74,7 +79,7 @@ async fn main() -> Result<()> {
             tracing_subscriber::fmt()
                 .without_time()
                 .with_target(false)
-                .with_level(true)
+                .with_level(false)
                 .compact()
                 .init();
             example::create_example(example_type, provider, model)?;

@@ -1,3 +1,5 @@
+//! Axum request handlers for the Lathe HTTP server.
+
 use crate::state::ServerState;
 use axum::Json;
 use axum::extract::State;
@@ -6,10 +8,14 @@ use lathe_core::state::AgentState;
 use serde_json::Value;
 use std::sync::Arc;
 
+/// `GET /health` - reports server liveness and the name of the loaded pipeline.
 pub async fn health(State(state): State<Arc<ServerState>>) -> Json<Value> {
     Json(serde_json::json!({"status": "ok", "pipeline": state.pipeline_name}))
 }
 
+/// `POST /invoke` - runs the loaded pipeline against the request body as the initial agent
+/// state, returning the resulting state as JSON. Responds `400` if the body isn't a non-empty
+/// JSON object, or `500` if pipeline execution fails.
 pub async fn invoke(
     State(state): State<Arc<ServerState>>,
     Json(body): Json<Value>,

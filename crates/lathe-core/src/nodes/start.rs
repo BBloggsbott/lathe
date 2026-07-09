@@ -3,6 +3,9 @@ use crate::state::AgentState;
 use anyhow::bail;
 use async_trait::async_trait;
 
+/// The graph's entry point node. Passes the initial agent state through unchanged, failing if
+/// it is empty. Every graph has exactly one, corresponding to a
+/// [`crate::node_defs::StartNodeDef`].
 #[derive(Debug)]
 pub struct StartNode {
     id: String,
@@ -19,6 +22,7 @@ impl LatheNode for StartNode {
         self.id.as_str()
     }
 
+    /// Logs and returns `agent_state` unchanged; errors if it is empty.
     async fn execute(&self, agent_state: AgentState) -> anyhow::Result<AgentState> {
         tracing::info!(
             "Starting Graph execution with agent state: {:?}",
@@ -32,6 +36,7 @@ impl LatheNode for StartNode {
 }
 
 impl StartNode {
+    /// Creates a new [`StartNode`] with the given ID and label.
     pub fn new(id: &str, label: &str) -> Self {
         Self {
             id: id.to_owned(),
