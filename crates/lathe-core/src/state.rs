@@ -139,3 +139,149 @@ fn set_value_by_pointer(root: &mut Value, pointer: &str, value: Value) -> Result
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn state_with(value: Value) -> AgentState {
+        AgentState(value)
+    }
+
+    #[test]
+    fn try_from_valid_object_succeeds() {
+        let state = AgentState::try_from(json!({"foo": "bar"})).unwrap();
+        assert_eq!(state.get("/foo"), Some(&json!("bar")));
+    }
+
+    #[test]
+    fn try_from_empty_object_errors() {
+        let err = AgentState::try_from(json!({})).unwrap_err();
+        assert!(matches!(err, AgentStateError::Empty));
+    }
+
+    #[test]
+    fn try_from_non_object_errors() {
+        let err = AgentState::try_from(json!("hello")).unwrap_err();
+        assert!(matches!(err, AgentStateError::NotAnObject));
+    }
+
+    #[test]
+    fn agent_state_error_display() {
+        assert_eq!(
+            AgentStateError::NotAnObject.to_string(),
+            "agent state root must be a JSON object"
+        );
+        assert_eq!(
+            AgentStateError::Empty.to_string(),
+            "agent state must not be empty"
+        );
+    }
+
+    #[test]
+    fn default_is_empty() {
+        assert!(AgentState::default().is_empty());
+    }
+
+    #[test]
+    fn get_missing_pointer_returns_none() {
+        let state = state_with(json!({"foo": "bar"}));
+        assert_eq!(state.get("/missing"), None);
+    }
+
+    #[test]
+    fn set_creates_intermediate_objects() {
+        let mut state = AgentState::default();
+        state.set("/a/b/c", json!(42)).unwrap();
+        assert_eq!(state.get("/a/b/c"), Some(&json!(42)));
+    }
+
+    #[test]
+    fn set_overwrites_existing_value() {
+        let mut state = state_with(json!({"foo": "bar"}));
+        state.set("/foo", json!("baz")).unwrap();
+        assert_eq!(state.get("/foo"), Some(&json!("baz")));
+    }
+
+    #[test]
+    fn set_root_pointer_errors() {
+        let mut state = AgentState::default();
+        assert!(state.set("/", json!(1)).is_err());
+    }
+
+    #[test]
+    fn set_empty_pointer_errors() {
+        let mut state = AgentState::default();
+        assert!(state.set("", json!(1)).is_err());
+    }
+
+    #[test]
+    fn set_through_non_object_errors() {
+        let mut state = state_with(json!({"foo": "bar"}));
+        assert!(state.set("/foo/baz", json!(1)).is_err());
+    }
+
+    #[test]
+    fn set_decodes_json_pointer_escapes() {
+        let mut state = AgentState::default();
+        state.set("/a~1b", json!("slash")).unwrap();
+        state.set("/c~0d", json!("tilde")).unwrap();
+        assert_eq!(state.get("/a~1b"), Some(&json!("slash")));
+        assert_eq!(state.get("/c~0d"), Some(&json!("tilde")));
+    }
+
+    #[test]
+    fn exists_reports_presence() {
+        let state = state_with(json!({"foo": "bar"}));
+        assert!(state.exists("/foo"));
+        assert!(!state.exists("/missing"));
+    }
+
+    #[test]
+    fn select_projects_requested_pointers() {
+        let state = state_with(json!({"foo": "bar", "baz": {"qux": 1}, "unused": true}));
+        let selected = state.select(&vec!["/foo".to_string(), "/baz/qux".to_string()]).unwrap();
+        assert_eq!(selected.get("/foo"), Some(&json!("bar")));
+        assert_eq!(selected.get("/baz/qux"), Some(&json!(1)));
+        assert_eq!(selected.get("/unused"), None);
+    }
+
+    #[test]
+    fn select_missing_pointer_errors() {
+        let state = state_with(json!({"foo": "bar"}));
+        assert!(state.select(&vec!["/missing".to_string()]).is_err());
+    }
+
+    #[test]
+    fn is_empty_true_for_empty_object() {
+        let state = state_with(json!({}));
+        assert!(state.is_empty());
+    }
+
+    #[test]
+    fn is_empty_false_for_populated_object() {
+        let state = state_with(json!({"foo": "bar"}));
+        assert!(!state.is_empty());
+    }
+
+    #[test]
+    fn is_empty_true_for_non_object() {
+        let state = state_with(json!("hello"));
+        assert!(state.is_empty());
+    }
+
+    #[test]
+    fn pretty_string_round_trips_as_json() {
+        let state = state_with(json!({"foo": "bar"}));
+        let pretty = state.pretty_string().unwrap();
+        let reparsed: Value = serde_json::from_str(&pretty).unwrap();
+        assert_eq!(reparsed, json!({"foo": "bar"}));
+    }
+
+    #[test]
+    fn into_value_unwraps_underlying_json() {
+        let state = state_with(json!({"foo": "bar"}));
+        assert_eq!(state.into_value(), json!({"foo": "bar"}));
+    }
+}

@@ -67,3 +67,52 @@ impl NodeKind {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::node_defs::llm::LlmNodeDef;
+    use crate::provider::LLMProvider;
+
+    #[test]
+    fn start_node_def_default_has_generated_id_and_label() {
+        let def = StartNodeDef::default();
+        assert!(!def.id.is_empty());
+        assert!(Uuid::parse_str(&def.id).is_ok());
+        assert_eq!(def.label, START_NODE_LABEL);
+    }
+
+    #[test]
+    fn end_node_def_default_has_generated_id_label_and_no_out_pointers() {
+        let def = EndNodeDef::default();
+        assert!(Uuid::parse_str(&def.id).is_ok());
+        assert_eq!(def.label, END_NODE_LABEL);
+        assert!(def.out_pointers.is_empty());
+    }
+
+    #[test]
+    fn node_kind_id_dispatches_to_underlying_definition() {
+        let start = NodeKind::Start(StartNodeDef {
+            id: "start-1".to_string(),
+            ..Default::default()
+        });
+        let end = NodeKind::End(EndNodeDef {
+            id: "end-1".to_string(),
+            ..Default::default()
+        });
+        let llm = NodeKind::LLMNode(LlmNodeDef {
+            id: "llm-1".to_string(),
+            label: "".to_string(),
+            provider: LLMProvider::LMStudio,
+            model: "test-model".to_string(),
+            system_prompt: "".to_string(),
+            input_key: "/in".to_string(),
+            output_key: "/out".to_string(),
+            provider_config_id: "".to_string(),
+        });
+
+        assert_eq!(start.id(), "start-1");
+        assert_eq!(end.id(), "end-1");
+        assert_eq!(llm.id(), "llm-1");
+    }
+}

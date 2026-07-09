@@ -47,3 +47,33 @@ impl LLMProviderConfig {
 /// Provider configs for a graph, keyed by [`LLMProviderConfig::id`] (matching
 /// [`crate::node_defs::llm::LlmNodeDef::provider_config_id`]).
 pub type LLMProviderConfigs = HashMap<String, LLMProviderConfig>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_openai_config_has_no_overrides() {
+        let config = LLMProviderConfig::default(&LLMProvider::OpenAI);
+        assert!(Uuid::parse_str(&config.id).is_ok());
+        assert!(config.base_url.is_none());
+        assert!(config.api_key.is_none());
+        assert!(matches!(config.provider, LLMProvider::OpenAI));
+    }
+
+    #[test]
+    fn default_lmstudio_config_has_no_overrides() {
+        let config = LLMProviderConfig::default(&LLMProvider::LMStudio);
+        assert!(Uuid::parse_str(&config.id).is_ok());
+        assert!(config.base_url.is_none());
+        assert!(config.api_key.is_none());
+        assert!(matches!(config.provider, LLMProvider::LMStudio));
+    }
+
+    #[test]
+    fn default_configs_have_distinct_ids() {
+        let a = LLMProviderConfig::default(&LLMProvider::OpenAI);
+        let b = LLMProviderConfig::default(&LLMProvider::OpenAI);
+        assert_ne!(a.id, b.id);
+    }
+}

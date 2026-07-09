@@ -44,3 +44,31 @@ impl StartNode {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn id_and_label_are_exposed() {
+        let node = StartNode::new("start-1", "Start");
+        assert_eq!(node.id(), "start-1");
+        assert_eq!(node.label(), "Start");
+    }
+
+    #[tokio::test]
+    async fn execute_passes_through_non_empty_state_unchanged() {
+        let node = StartNode::new("start-1", "Start");
+        let state = AgentState::try_from(json!({"message": "hi"})).unwrap();
+        let result = node.execute(state).await.unwrap();
+        assert_eq!(result.get("/message"), Some(&json!("hi")));
+    }
+
+    #[tokio::test]
+    async fn execute_errors_on_empty_state() {
+        let node = StartNode::new("start-1", "Start");
+        let state = AgentState::default();
+        assert!(node.execute(state).await.is_err());
+    }
+}

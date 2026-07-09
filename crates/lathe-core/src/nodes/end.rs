@@ -54,3 +54,46 @@ impl EndNode {
         &self.out_pointers
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::AgentState;
+    use serde_json::json;
+
+    #[test]
+    fn out_pointers_accessor_returns_configured_pointers() {
+        let node = EndNode::new("end-1", "End", &["/foo".to_string()]);
+        assert_eq!(node.out_pointers(), &vec!["/foo".to_string()]);
+    }
+
+    #[test]
+    fn id_and_label_are_exposed() {
+        let node = EndNode::new("end-1", "End", &[]);
+        assert_eq!(node.id(), "end-1");
+        assert_eq!(node.label(), "End");
+    }
+
+    #[tokio::test]
+    async fn execute_selects_out_pointers_from_state() {
+        let node = EndNode::new("end-1", "End", &["/foo".to_string()]);
+        let state = AgentState::try_from(json!({"foo": "bar", "unused": true})).unwrap();
+        let result = node.execute(state).await.unwrap();
+        assert_eq!(result.get("/foo"), Some(&json!("bar")));
+        assert_eq!(result.get("/unused"), None);
+    }
+
+    #[tokio::test]
+    async fn execute_errors_when_out_pointer_missing_from_state() {
+        let node = EndNode::new("end-1", "End", &["/missing".to_string()]);
+        let state = AgentState::try_from(json!({"foo": "bar"})).unwrap();
+        assert!(node.execute(state).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn execute_errors_on_empty_state() {
+        let node = EndNode::new("end-1", "End", &[]);
+        let state = AgentState::default();
+        assert!(node.execute(state).await.is_err());
+    }
+}

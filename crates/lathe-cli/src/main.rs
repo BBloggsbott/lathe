@@ -99,3 +99,59 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    #[test]
+    fn clap_command_definition_is_valid() {
+        // Catches malformed clap attributes (conflicting args, bad defaults, etc.) that would
+        // otherwise only surface at runtime via a panic.
+        Args::command().debug_assert();
+    }
+
+    #[test]
+    fn example_subcommand_parses_name_provider_and_model() {
+        let args = Args::parse_from([
+            "lathe", "example", "simple", "-p", "open-ai", "-m", "gpt-5.5",
+        ]);
+        match args.command {
+            Commands::Example {
+                name,
+                provider,
+                model,
+            } => {
+                assert!(matches!(name, ExampleType::Simple));
+                assert!(matches!(provider, LLMProvider::OpenAI));
+                assert_eq!(model, "gpt-5.5");
+            }
+            _ => panic!("expected Example subcommand"),
+        }
+    }
+
+    #[test]
+    fn run_subcommand_parses_pipeline_and_message() {
+        let args = Args::parse_from(["lathe", "run", "-p", "pipeline.yaml", "-m", "hi"]);
+        match args.command {
+            Commands::Run { pipeline, message } => {
+                assert_eq!(pipeline, PathBuf::from("pipeline.yaml"));
+                assert_eq!(message, "hi");
+            }
+            _ => panic!("expected Run subcommand"),
+        }
+    }
+
+    #[test]
+    fn server_subcommand_defaults_host_and_port() {
+        let args = Args::parse_from(["lathe", "server", "-p", "pipeline.yaml"]);
+        match args.command {
+            Commands::Server { host, port, .. } => {
+                assert_eq!(host, "127.0.0.1");
+                assert_eq!(port, 8080);
+            }
+            _ => panic!("expected Server subcommand"),
+        }
+    }
+}

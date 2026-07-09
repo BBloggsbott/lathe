@@ -195,7 +195,9 @@ Loading a graph with validation enabled (the default for `lathe run` and `lathe 
 ## Roadmap
 
 - [x] **Web server** — serve a pipeline as an HTTP API endpoint
+- [ ] **Tool call support** — let `LLMNode`s invoke tools/functions
 - [ ] Multi-turn conversation support
+- [ ] **Graph visualizer** — render a pipeline's node/edge structure for inspection
 - [ ] Additional node types (branching, tool calls, etc.)
 - [ ] Cyclic graph support for retry loops and iterative agents
 - [ ] **Visual UI** — local graph builder and debugger for authoring and stepping through pipelines

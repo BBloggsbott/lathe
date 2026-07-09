@@ -163,3 +163,135 @@ impl LatheGraph {
         node_ids
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::node_defs::{EndNodeDef, StartNodeDef};
+    use port::Port;
+
+    fn connection(from: &str, to: &str) -> Connection {
+        Connection {
+            from: Port {
+                node_id: from.to_string(),
+                name: "out".to_string(),
+            },
+            to: Port {
+                node_id: to.to_string(),
+                name: "in".to_string(),
+            },
+        }
+    }
+
+    fn start_end_definition() -> GraphDefinition {
+        GraphDefinition {
+            graph_version: GraphVersion::V1,
+            name: "test-graph".to_string(),
+            nodes: vec![
+                NodeKind::Start(StartNodeDef {
+                    id: "start".to_string(),
+                    ..Default::default()
+                }),
+                NodeKind::End(EndNodeDef {
+                    id: "end".to_string(),
+                    ..Default::default()
+                }),
+            ],
+            connections: vec![connection("start", "end")],
+            provider_configs: Default::default(),
+        }
+    }
+
+    #[test]
+    fn from_def_indexes_nodes_and_edges() {
+        let graph = LatheGraph::from_def(start_end_definition(), false).unwrap();
+        assert_eq!(graph.node_index.len(), 2);
+        assert_eq!(graph.digraph.edge_count(), 1);
+    }
+
+    #[test]
+    fn from_def_unknown_source_node_errors() {
+        let mut def = start_end_definition();
+        def.connections = vec![connection("missing", "end")];
+        assert!(LatheGraph::from_def(def, false).is_err());
+    }
+
+    #[test]
+    fn from_def_unknown_target_node_errors() {
+        let mut def = start_end_definition();
+        def.connections = vec![connection("start", "missing")];
+        assert!(LatheGraph::from_def(def, false).is_err());
+    }
+
+    #[test]
+    fn topological_order_respects_dependencies() {
+        let graph = LatheGraph::from_def(start_end_definition(), false).unwrap();
+        let order = graph.topological_order().unwrap();
+        assert_eq!(order, vec!["start".to_string(), "end".to_string()]);
+    }
+
+    #[test]
+    fn topological_order_errors_on_cycle() {
+        let mut def = start_end_definition();
+        def.connections.push(connection("end", "start"));
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        assert!(graph.topological_order().is_err());
+    }
+
+    #[test]
+    fn validate_passes_when_leaves_match_end_nodes() {
+        let graph = LatheGraph::from_def(start_end_definition(), false).unwrap();
+        assert!(graph.validate().is_ok());
+    }
+
+    #[test]
+    fn from_def_with_validate_true_runs_validation() {
+        assert!(LatheGraph::from_def(start_end_definition(), true).is_ok());
+    }
+
+    #[test]
+    fn validate_fails_when_leaf_is_not_declared_end_node() {
+        // "end" is a leaf but only declared as a Start node, so it's not in end_node_ids.
+        let mut def = start_end_definition();
+        def.nodes = vec![
+            NodeKind::Start(StartNodeDef {
+                id: "start".to_string(),
+                ..Default::default()
+            }),
+            NodeKind::Start(StartNodeDef {
+                id: "end".to_string(),
+                ..Default::default()
+            }),
+        ];
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        assert!(graph.validate().is_err());
+    }
+
+    #[test]
+    fn validate_fails_when_declared_end_node_is_not_a_leaf() {
+        // "middle" is declared as an End node but has an outgoing edge to "end", so it isn't
+        // actually a leaf.
+        let def = GraphDefinition {
+            graph_version: GraphVersion::V1,
+            name: "test-graph".to_string(),
+            nodes: vec![
+                NodeKind::Start(StartNodeDef {
+                    id: "start".to_string(),
+                    ..Default::default()
+                }),
+                NodeKind::End(EndNodeDef {
+                    id: "middle".to_string(),
+                    ..Default::default()
+                }),
+                NodeKind::End(EndNodeDef {
+                    id: "end".to_string(),
+                    ..Default::default()
+                }),
+            ],
+            connections: vec![connection("start", "middle"), connection("middle", "end")],
+            provider_configs: Default::default(),
+        };
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        assert!(graph.validate().is_err());
+    }
+}

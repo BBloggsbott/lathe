@@ -59,7 +59,6 @@ fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
 
     let mut provider_config = LLMProviderConfig::default(&provider);
     provider_config.id = "my-model".to_string();
-    // todo: Using my local model fro dev-testing. Update to a generic example.
 
     let llm_node_def = LlmNodeDef {
         id: "llm-node".to_string(),
@@ -137,7 +136,6 @@ fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
 
     let mut provider_config = LLMProviderConfig::default(&provider);
     provider_config.id = "my-model".to_string();
-    // todo: Using my local model fro dev-testing. Update to a generic example.
 
     let llm_explainer_node_def = LlmNodeDef {
         id: "llm-explainer-node".to_string(),
@@ -256,4 +254,79 @@ fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
     out_path.push("explainer_agent.yaml");
     tracing::info!("Writing to {}", out_path.to_str().unwrap());
     yaml::save(&lathe_graph, &out_path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Both `create_simple_agent` and `create_explainer_agent` write to hardcoded paths under
+    /// `./examples`, so these tests clean that directory up afterwards to avoid leaving stray
+    /// artifacts. `EXAMPLES_DIR_LOCK` serializes the two tests that touch the shared directory
+    /// (tests within this binary otherwise run concurrently), so it's always safe to remove the
+    /// whole directory afterwards if this test is the one that created it.
+    static EXAMPLES_DIR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    struct ExamplesDirCleanup {
+        dir: PathBuf,
+        remove_whole_dir: bool,
+        _guard: std::sync::MutexGuard<'static, ()>,
+    }
+
+    impl ExamplesDirCleanup {
+        fn setup() -> Self {
+            let guard = EXAMPLES_DIR_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+            let dir = PathBuf::from("examples");
+            let remove_whole_dir = !dir.exists();
+            std::fs::create_dir_all(&dir).unwrap();
+            Self {
+                dir,
+                remove_whole_dir,
+                _guard: guard,
+            }
+        }
+    }
+
+    impl Drop for ExamplesDirCleanup {
+        fn drop(&mut self) {
+            if self.remove_whole_dir {
+                let _ = std::fs::remove_dir_all(&self.dir);
+            } else {
+                let _ = std::fs::remove_file(self.dir.join("simple_agent.yaml"));
+                let _ = std::fs::remove_file(self.dir.join("explainer_agent.yaml"));
+            }
+        }
+    }
+
+    #[test]
+    fn create_example_simple_writes_a_loadable_pipeline() {
+        let cleanup = ExamplesDirCleanup::setup();
+        let path = cleanup.dir.join("simple_agent.yaml");
+
+        create_example(ExampleType::Simple, LLMProvider::LMStudio, "test-model".to_string()).unwrap();
+
+        let graph = yaml::load(&path, true).unwrap();
+        assert_eq!(graph.name, "Example Lathe Graph - Simple");
+        assert_eq!(graph.definition.nodes.len(), 3);
+    }
+
+    #[test]
+    fn create_example_explainer_writes_a_loadable_pipeline() {
+        let cleanup = ExamplesDirCleanup::setup();
+        let path = cleanup.dir.join("explainer_agent.yaml");
+
+        create_example(ExampleType::Explainer, LLMProvider::LMStudio, "test-model".to_string()).unwrap();
+
+        let graph = yaml::load(&path, true).unwrap();
+        assert_eq!(graph.name, "Example Lathe Graph - Explainer");
+        assert_eq!(graph.definition.nodes.len(), 5);
+    }
+
+    #[test]
+    fn create_example_none_is_a_no_op() {
+        assert!(
+            create_example(ExampleType::None, LLMProvider::LMStudio, "test-model".to_string())
+                .is_ok()
+        );
+    }
 }

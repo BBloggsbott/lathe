@@ -63,5 +63,88 @@ pub fn resolve(template: &str, agent_state: &AgentState) -> Result<String> {
         }
     }
 
+    result.push_str(processing_template);
+
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn state() -> AgentState {
+        AgentState::try_from(json!({"name": "world", "count": 3})).unwrap()
+    }
+
+    #[test]
+    fn resolve_with_no_placeholders_returns_template_unchanged() {
+        let result = resolve("hello there", &state()).unwrap();
+        assert_eq!(result, "hello there");
+    }
+
+    #[test]
+    fn resolve_substitutes_string_pointer() {
+        let result = resolve("hello {{/name}}", &state()).unwrap();
+        assert_eq!(result, "hello world");
+    }
+
+    #[test]
+    fn resolve_substitutes_multiple_pointers() {
+        let result = resolve("{{/name}} has {{/count}}", &state()).unwrap();
+        assert_eq!(result, "world has 3");
+    }
+
+    #[test]
+    fn resolve_keeps_text_after_the_last_placeholder() {
+        let result = resolve("hello {{/name}}!", &state()).unwrap();
+        assert_eq!(result, "hello world!");
+    }
+
+    #[test]
+    fn resolve_stringifies_non_string_values() {
+        let result = resolve("count={{/count}}", &state()).unwrap();
+        assert_eq!(result, "count=3");
+    }
+
+    #[test]
+    fn resolve_trims_whitespace_inside_braces() {
+        let result = resolve("hello {{ /name }}", &state()).unwrap();
+        assert_eq!(result, "hello world");
+    }
+
+    #[test]
+    fn resolve_unclosed_placeholder_errors() {
+        assert!(resolve("hello {{/name", &state()).is_err());
+    }
+
+    #[test]
+    fn resolve_pointer_missing_leading_slash_errors() {
+        assert!(resolve("hello {{name}}", &state()).is_err());
+    }
+
+    #[test]
+    fn resolve_missing_pointer_errors() {
+        assert!(resolve("hello {{/missing}}", &state()).is_err());
+    }
+
+    #[test]
+    fn validate_accepts_well_formed_template() {
+        assert!(validate("hello {{/name}}", &state()).is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_unclosed_placeholder() {
+        assert!(validate("hello {{/name", &state()).is_err());
+    }
+
+    #[test]
+    fn validate_rejects_pointer_without_leading_slash() {
+        assert!(validate("hello {{name}}", &state()).is_err());
+    }
+
+    #[test]
+    fn validate_rejects_missing_pointer() {
+        assert!(validate("hello {{/missing}}", &state()).is_err());
+    }
 }

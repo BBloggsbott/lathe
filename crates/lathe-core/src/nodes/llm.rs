@@ -227,3 +227,80 @@ fn build_lmstudio_closure(
         },
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::provider::LLMProviderConfigs;
+
+    fn lmstudio_def() -> LlmNodeDef {
+        LlmNodeDef {
+            id: "".to_string(),
+            label: "".to_string(),
+            provider: LLMProvider::LMStudio,
+            model: "test-model".to_string(),
+            system_prompt: "".to_string(),
+            input_key: "/message".to_string(),
+            output_key: "/response".to_string(),
+            provider_config_id: "unknown-config".to_string(),
+        }
+    }
+
+    #[test]
+    fn from_node_def_fills_in_defaults_for_blank_fields() {
+        let def = lmstudio_def();
+        let node = LLMNode::from_node_def(&def, &LLMProviderConfigs::new());
+
+        assert!(Uuid::parse_str(&node.id).is_ok());
+        assert_eq!(node.label, LLM_NODE_DEFAULT_LABEL);
+        assert_eq!(node.system_prompt, LLM_NODE_DEFAULT_SYSTEM_PROMPT);
+        assert_eq!(node.input_key, "/message");
+        assert_eq!(node.output_key, "/response");
+    }
+
+    #[test]
+    fn from_node_def_preserves_explicit_fields() {
+        let mut def = lmstudio_def();
+        def.id = "llm-1".to_string();
+        def.label = "My LLM".to_string();
+        def.system_prompt = "Be terse".to_string();
+
+        let node = LLMNode::from_node_def(&def, &LLMProviderConfigs::new());
+
+        assert_eq!(node.id, "llm-1");
+        assert_eq!(node.label, "My LLM");
+        assert_eq!(node.system_prompt, "Be terse");
+    }
+
+    #[test]
+    fn id_and_label_are_exposed() {
+        let mut def = lmstudio_def();
+        def.id = "llm-1".to_string();
+        def.label = "My LLM".to_string();
+        let node = LLMNode::from_node_def(&def, &LLMProviderConfigs::new());
+
+        assert_eq!(node.id(), "llm-1");
+        assert_eq!(node.label(), "My LLM");
+    }
+
+    #[test]
+    fn debug_impl_truncates_long_system_prompt() {
+        let mut def = lmstudio_def();
+        def.system_prompt = "this is a fairly long system prompt".to_string();
+        let node = LLMNode::from_node_def(&def, &LLMProviderConfigs::new());
+
+        let debug_str = format!("{node:?}");
+        assert!(debug_str.contains("this is..."));
+        assert!(!debug_str.contains("fairly long"));
+    }
+
+    #[test]
+    fn debug_impl_shows_short_system_prompt_in_full() {
+        let mut def = lmstudio_def();
+        def.system_prompt = "short".to_string();
+        let node = LLMNode::from_node_def(&def, &LLMProviderConfigs::new());
+
+        let debug_str = format!("{node:?}");
+        assert!(debug_str.contains("short"));
+    }
+}

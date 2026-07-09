@@ -21,3 +21,82 @@ pub fn load(path: &Path, validate: bool) -> Result<LatheGraph> {
     let graph = LatheGraph::from_def(graph_definition, validate)?;
     Ok(graph)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::graph::GraphVersion;
+    use crate::graph::port::{Connection, Port};
+    use crate::node_defs::{EndNodeDef, NodeKind, StartNodeDef};
+
+    struct TempYamlPath(std::path::PathBuf);
+
+    impl TempYamlPath {
+        fn new(name: &str) -> Self {
+            let mut path = std::env::temp_dir();
+            path.push(format!(
+                "lathe-yaml-test-{name}-{}.yaml",
+                uuid::Uuid::new_v4()
+            ));
+            Self(path)
+        }
+    }
+
+    impl Drop for TempYamlPath {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+
+    fn start_end_graph() -> LatheGraph {
+        let start = StartNodeDef {
+            id: "start".to_string(),
+            ..Default::default()
+        };
+        let end = EndNodeDef {
+            id: "end".to_string(),
+            out_pointers: vec!["/message".to_string()],
+            ..Default::default()
+        };
+        let connection = Connection {
+            from: Port {
+                node_id: start.id.clone(),
+                name: "out".to_string(),
+            },
+            to: Port {
+                node_id: end.id.clone(),
+                name: "in".to_string(),
+            },
+        };
+
+        let definition = GraphDefinition {
+            graph_version: GraphVersion::V1,
+            name: "yaml-test-graph".to_string(),
+            nodes: vec![NodeKind::Start(start), NodeKind::End(end)],
+            connections: vec![connection],
+            provider_configs: Default::default(),
+        };
+
+        LatheGraph::from_def(definition, true).unwrap()
+    }
+
+    #[test]
+    fn save_then_load_round_trips_the_graph_definition() {
+        let temp = TempYamlPath::new("round-trip");
+        let graph = start_end_graph();
+
+        save(&graph, &temp.0).unwrap();
+        let loaded = load(&temp.0, true).unwrap();
+
+        assert_eq!(loaded.name, "yaml-test-graph");
+        assert_eq!(loaded.definition.nodes.len(), 2);
+        assert_eq!(loaded.definition.connections.len(), 1);
+    }
+
+    #[test]
+    fn load_nonexistent_file_errors() {
+        let mut path = std::env::temp_dir();
+        path.push(format!("lathe-yaml-test-missing-{}.yaml", uuid::Uuid::new_v4()));
+        assert!(load(&path, true).is_err());
+    }
+}

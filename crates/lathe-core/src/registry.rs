@@ -46,3 +46,48 @@ pub fn materialize(
 
     Ok(executable_nodes)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::node_defs::llm::LlmNodeDef;
+    use crate::node_defs::{EndNodeDef, StartNodeDef};
+    use crate::provider::LLMProvider;
+
+    #[test]
+    fn materialize_builds_a_node_for_each_definition() {
+        let nodes = vec![
+            NodeKind::Start(StartNodeDef {
+                id: "start".to_string(),
+                ..Default::default()
+            }),
+            NodeKind::LLMNode(LlmNodeDef {
+                id: "llm".to_string(),
+                label: "LLM".to_string(),
+                provider: LLMProvider::LMStudio,
+                model: "test-model".to_string(),
+                system_prompt: "".to_string(),
+                input_key: "/message".to_string(),
+                output_key: "/response".to_string(),
+                provider_config_id: "".to_string(),
+            }),
+            NodeKind::End(EndNodeDef {
+                id: "end".to_string(),
+                ..Default::default()
+            }),
+        ];
+
+        let executable = materialize(&nodes, &LLMProviderConfigs::new()).unwrap();
+
+        assert_eq!(executable.len(), 3);
+        assert_eq!(executable.get("start").unwrap().id(), "start");
+        assert_eq!(executable.get("llm").unwrap().id(), "llm");
+        assert_eq!(executable.get("end").unwrap().id(), "end");
+    }
+
+    #[test]
+    fn materialize_of_empty_nodes_returns_empty_map() {
+        let executable = materialize(&[], &LLMProviderConfigs::new()).unwrap();
+        assert!(executable.is_empty());
+    }
+}
