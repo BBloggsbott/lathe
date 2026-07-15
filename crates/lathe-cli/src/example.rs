@@ -336,6 +336,63 @@ mod tests {
         assert_eq!(graph.definition.nodes.len(), 5);
     }
 
+    /// Collects the `provider` of every `LLMNode` in a graph definition.
+    fn llm_node_providers(graph: &lathe_core::graph::LatheGraph) -> Vec<LLMProvider> {
+        graph
+            .definition
+            .nodes
+            .iter()
+            .filter_map(|node| match node {
+                NodeKind::LLMNode(llm_node) => Some(llm_node.provider.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn create_example_simple_uses_requested_provider_for_llm_nodes() {
+        let cleanup = ExamplesDirCleanup::setup();
+        let path = cleanup.dir.join("simple_agent.yaml");
+
+        create_example(
+            ExampleType::Simple,
+            LLMProvider::OpenAI,
+            "test-model".to_string(),
+        )
+        .unwrap();
+
+        let graph = yaml::load(&path, true).unwrap();
+        let providers = llm_node_providers(&graph);
+        assert!(!providers.is_empty());
+        assert!(
+            providers
+                .iter()
+                .all(|provider| matches!(provider, LLMProvider::OpenAI))
+        );
+    }
+
+    #[test]
+    fn create_example_explainer_uses_requested_provider_for_llm_nodes() {
+        let cleanup = ExamplesDirCleanup::setup();
+        let path = cleanup.dir.join("explainer_agent.yaml");
+
+        create_example(
+            ExampleType::Explainer,
+            LLMProvider::OpenAI,
+            "test-model".to_string(),
+        )
+        .unwrap();
+
+        let graph = yaml::load(&path, true).unwrap();
+        let providers = llm_node_providers(&graph);
+        assert_eq!(providers.len(), 3);
+        assert!(
+            providers
+                .iter()
+                .all(|provider| matches!(provider, LLMProvider::OpenAI))
+        );
+    }
+
     #[test]
     fn create_example_none_is_a_no_op() {
         assert!(
