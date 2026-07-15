@@ -82,6 +82,7 @@ mod tests {
             nodes: vec![NodeKind::Start(start), NodeKind::End(end)],
             connections: vec![connection],
             provider_configs: Default::default(),
+            tools: Default::default(),
         };
 
         LatheGraph::from_def(definition, true).unwrap()

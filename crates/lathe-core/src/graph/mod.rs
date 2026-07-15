@@ -1,5 +1,6 @@
 use crate::node_defs::NodeKind;
 use crate::provider::LLMProviderConfigs;
+use crate::tool_defs::ToolKind;
 use anyhow::Result;
 use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -13,6 +14,7 @@ pub mod port;
 /// them, and the provider configs those nodes reference. This is what gets read from and
 /// written to YAML via [`crate::yaml`]; use [`LatheGraph::from_def`] to turn it into a runnable,
 /// validated graph.
+//todo: Do I need to have this in my memory after the graph is loaded?
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GraphDefinition {
     pub graph_version: GraphVersion,
@@ -20,6 +22,8 @@ pub struct GraphDefinition {
     pub nodes: Vec<NodeKind>,
     pub connections: Vec<Connection>,
     pub provider_configs: LLMProviderConfigs,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub tools: HashMap<String, ToolKind>,
 }
 
 /// Schema version of a [`GraphDefinition`], used by [`crate::executor::Executor`] to pick the
@@ -199,6 +203,7 @@ mod tests {
             ],
             connections: vec![connection("start", "end")],
             provider_configs: Default::default(),
+            tools: Default::default(),
         }
     }
 
@@ -290,6 +295,7 @@ mod tests {
             ],
             connections: vec![connection("start", "middle"), connection("middle", "end")],
             provider_configs: Default::default(),
+            tools: Default::default(),
         };
         let graph = LatheGraph::from_def(def, false).unwrap();
         assert!(graph.validate().is_err());

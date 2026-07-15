@@ -20,6 +20,7 @@ rig-core = {workspace = true}
 futures = {workspace = true}
 tracing = {workspace = true}
 clap = {workspace = true}
+reqwest = {workspace = true}
 
 [dev-dependencies]
 tokio = {workspace = true}
