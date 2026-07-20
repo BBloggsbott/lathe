@@ -113,6 +113,8 @@ impl LatheGraph {
     pub fn validate(&self) -> Result<()> {
         self.validate_single_start()?;
 
+        self.validate_no_orphan_nodes()?;
+
         let end_node_ids = self.end_node_ids();
         let leaf_ids: HashSet<&str> = self
             .digraph
@@ -161,6 +163,35 @@ impl LatheGraph {
                 start_ids
             )),
         }
+    }
+
+    /// Every node except `Start` must have at least one incoming edge.
+    fn validate_no_orphan_nodes(&self) -> Result<()> {
+        let start_ids: HashSet<&str> = self.start_node_ids().into_iter().collect();
+
+        let orphan_ids: Vec<&str> = self
+            .digraph
+            .node_indices()
+            .filter(|&idx| {
+                let id = self.digraph[idx].as_str();
+                !start_ids.contains(id)
+                    && self
+                        .digraph
+                        .neighbors_directed(idx, petgraph::Direction::Incoming)
+                        .count()
+                        == 0
+            })
+            .map(|idx| self.digraph[idx].as_str())
+            .collect();
+
+        if !orphan_ids.is_empty() {
+            return Err(anyhow::anyhow!(
+                "graph has node(s) with no incoming edge: {:?}",
+                orphan_ids
+            ));
+        }
+
+        Ok(())
     }
 
     /// IDs of all [`NodeKind::Start`] nodes in the underlying definition.
@@ -314,6 +345,68 @@ mod tests {
         let graph = LatheGraph::from_def(def, false).unwrap();
         let err = graph.validate().unwrap_err();
         assert!(err.to_string().contains("multiple Start nodes"));
+    }
+
+    #[test]
+    fn validate_no_orphan_nodes_passes_when_every_non_start_node_has_an_incoming_edge() {
+        let graph = LatheGraph::from_def(start_end_definition(), false).unwrap();
+        assert!(graph.validate_no_orphan_nodes().is_ok());
+    }
+
+    #[test]
+    fn validate_no_orphan_nodes_ignores_start_node_having_no_incoming_edge() {
+        // The Start node itself never has an incoming edge; that alone must not be flagged.
+        let mut def = start_end_definition();
+        def.nodes.push(NodeKind::End(EndNodeDef {
+            id: "end2".to_string(),
+            ..Default::default()
+        }));
+        def.connections.push(connection("start", "end2"));
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        assert!(graph.validate_no_orphan_nodes().is_ok());
+    }
+
+    #[test]
+    fn validate_no_orphan_nodes_fails_for_disconnected_node() {
+        let mut def = start_end_definition();
+        def.nodes.push(NodeKind::End(EndNodeDef {
+            id: "orphan".to_string(),
+            ..Default::default()
+        }));
+        // "orphan" is never referenced by any connection, so it has no incoming edge.
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        let err = graph.validate_no_orphan_nodes().unwrap_err();
+        assert!(err.to_string().contains("no incoming edge"));
+        assert!(err.to_string().contains("orphan"));
+    }
+
+    #[test]
+    fn validate_no_orphan_nodes_reports_all_disconnected_nodes() {
+        let mut def = start_end_definition();
+        def.nodes.push(NodeKind::End(EndNodeDef {
+            id: "orphan1".to_string(),
+            ..Default::default()
+        }));
+        def.nodes.push(NodeKind::End(EndNodeDef {
+            id: "orphan2".to_string(),
+            ..Default::default()
+        }));
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        let err = graph.validate_no_orphan_nodes().unwrap_err();
+        assert!(err.to_string().contains("orphan1"));
+        assert!(err.to_string().contains("orphan2"));
+    }
+
+    #[test]
+    fn validate_fails_for_disconnected_node_via_public_validate() {
+        let mut def = start_end_definition();
+        def.nodes.push(NodeKind::End(EndNodeDef {
+            id: "orphan".to_string(),
+            ..Default::default()
+        }));
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        let err = graph.validate().unwrap_err();
+        assert!(err.to_string().contains("no incoming edge"));
     }
 
     #[test]
