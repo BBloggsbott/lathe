@@ -110,6 +110,7 @@ fn create_simple_agent(provider: LLMProvider, model: String) -> Result<()> {
         ],
         connections: vec![connect_start_llm, connect_llm_end],
         provider_configs,
+        tools: Default::default(),
     };
 
     let lathe_graph = LatheGraph::from_def(graph_definition, true)?;
@@ -250,6 +251,7 @@ fn create_explainer_agent(provider: LLMProvider, model: String) -> Result<()> {
             connect_topic_generator_end,
         ],
         provider_configs,
+        tools: Default::default(),
     };
 
     let lathe_graph = LatheGraph::from_def(graph_definition, true)?;

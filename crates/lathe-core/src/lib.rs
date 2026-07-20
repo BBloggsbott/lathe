@@ -12,4 +12,6 @@ pub mod provider;
 pub mod registry;
 pub mod state;
 pub mod template;
+pub mod tool_defs;
+pub mod tools;
 pub mod yaml;
