@@ -111,6 +111,8 @@ impl LatheGraph {
     /// Checks that the graph's leaf nodes (no outgoing edges) exactly match its declared
     /// [`NodeKind::End`] nodes. Every end node must be a leaf and vice versa.
     pub fn validate(&self) -> Result<()> {
+        self.validate_single_start()?;
+
         let end_node_ids = self.end_node_ids();
         let leaf_ids: HashSet<&str> = self
             .digraph
@@ -146,6 +148,31 @@ impl LatheGraph {
         }
 
         Ok(())
+    }
+
+    /// Exactly one `Start` node per graph.
+    fn validate_single_start(&self) -> Result<()> {
+        let start_ids = self.start_node_ids();
+        match start_ids.len() {
+            1 => Ok(()),
+            0 => Err(anyhow::anyhow!("graph has no Start node")),
+            _ => Err(anyhow::anyhow!(
+                "graph has multiple Start nodes: {:?}, expected exactly one",
+                start_ids
+            )),
+        }
+    }
+
+    /// IDs of all [`NodeKind::Start`] nodes in the underlying definition.
+    fn start_node_ids(&self) -> Vec<&str> {
+        self.definition
+            .nodes
+            .iter()
+            .filter_map(|node| match node {
+                NodeKind::Start(node) => Some(node.id.as_str()),
+                _ => None,
+            })
+            .collect()
     }
 
     /// IDs of all [`NodeKind::End`] nodes in the underlying definition.
@@ -265,6 +292,28 @@ mod tests {
         ];
         let graph = LatheGraph::from_def(def, false).unwrap();
         assert!(graph.validate().is_err());
+    }
+
+    #[test]
+    fn validate_fails_when_no_start_node() {
+        let mut def = start_end_definition();
+        def.nodes.retain(|node| !matches!(node, NodeKind::Start(_)));
+        def.connections = vec![];
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        let err = graph.validate().unwrap_err();
+        assert!(err.to_string().contains("no Start node"));
+    }
+
+    #[test]
+    fn validate_fails_when_multiple_start_nodes() {
+        let mut def = start_end_definition();
+        def.nodes.push(NodeKind::Start(StartNodeDef {
+            id: "start2".to_string(),
+            ..Default::default()
+        }));
+        let graph = LatheGraph::from_def(def, false).unwrap();
+        let err = graph.validate().unwrap_err();
+        assert!(err.to_string().contains("multiple Start nodes"));
     }
 
     #[test]
