@@ -14,7 +14,6 @@ pub mod port;
 /// them, and the provider configs those nodes reference. This is what gets read from and
 /// written to YAML via [`crate::yaml`]; use [`LatheGraph::from_def`] to turn it into a runnable,
 /// validated graph.
-//todo: Do I need to have this in my memory after the graph is loaded?
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GraphDefinition {
     pub graph_version: GraphVersion,
@@ -39,6 +38,7 @@ pub enum GraphVersion {
 pub struct LatheGraph {
     pub graph_version: GraphVersion,
     pub name: String,
+    //todo: Do I need to have this in my memory after the graph is materialized?
     pub definition: GraphDefinition,
     pub node_index: HashMap<String, NodeIndex>,
     pub digraph: DiGraph<String, ()>,
