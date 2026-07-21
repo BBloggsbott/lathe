@@ -4,7 +4,7 @@ resolver = "3"
 
 [workspace.package]
 license = "GPL-3.0-only"
-homepage = "https://github.com/BBloggsbott/lathe"
+homepage = "https://lathe.vishalramesh.com/latest/"
 repository = "https://github.com/BBloggsbott/lathe"
 
 [workspace.dependencies]
