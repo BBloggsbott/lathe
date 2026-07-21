@@ -1,6 +1,6 @@
 [package]
 name = "lathe-core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Core graph, executor, and node types for building YAML-defined AI agent pipelines"
 license.workspace = true
